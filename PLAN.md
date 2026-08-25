@@ -103,13 +103,17 @@ distributed-tic-tac-toe/
 ├── pom.xml                          # parent: dependencyManagement, plugin config
 ├── game-engine-service/
 │   └── src/main/java/.../engine/
-│       ├── domain/                  # Game, Board, Player, GameStatus, Move + their exceptions
-│       │                            #   (zero framework imports — the rules stand alone)
+│       ├── domain/                  # Game, Board, Player, GameStatus, Move (+ exception/)
+│       │                            #   zero framework imports — the rules stand alone
 │       ├── controller/              # GameController, ApiExceptionHandler
 │       ├── dto/                     # CreateGameRequest, MoveRequest, GameStateResponse
-│       ├── service/                 # GameService + GameNotFound/ConcurrentUpdate exceptions
-│       └── repository/              # GameRepository (interface), StoredGame,
-│                                    #   InMemoryGameRepository, MongoGameRepository
+│       ├── service/                 # GameService, GameCreationResult (+ exception/)
+│       ├── mapper/                  # GameDocumentMapper — domain <-> stored shape
+│       ├── config/                  # ClockConfiguration
+│       └── repository/              # GameRepository (the port), StoredGame
+│           ├── inmemory/            #   InMemoryGameRepository        @Profile("in-memory")
+│           └── mongo/               #   MongoGameRepository, GameDocument,
+│                                    #   SpringDataGameRepository      @Profile("mongo")
 ├── game-session-service/
 │   └── src/main/java/.../session/
 │       ├── domain/                  # Session, SessionStatus, MoveRecord
