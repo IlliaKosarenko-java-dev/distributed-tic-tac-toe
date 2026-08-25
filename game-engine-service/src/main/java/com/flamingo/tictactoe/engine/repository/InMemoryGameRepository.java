@@ -1,0 +1,59 @@
+package com.flamingo.tictactoe.engine.repository;
+
+import com.flamingo.tictactoe.engine.service.exception.ConcurrentGameUpdateException;
+import com.flamingo.tictactoe.engine.domain.Game;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Repository;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Keeps games in a map so the service runs with no infrastructure at all — used by the
+ * {@code in-memory} profile and by tests.
+ *
+ * <p>{@code putIfAbsent} and {@code computeIfPresent} do the same job the MongoDB adapter
+ * gets from single-document atomicity: no two writers can interleave on one game. The
+ * guarantee is per-JVM here rather than cluster-wide, which is exactly the limitation the
+ * MongoDB adapter exists to remove.
+ */
+@Repository
+@Profile("in-memory")
+public class InMemoryGameRepository implements GameRepository {
+
+    private final Map<String, StoredGame> games = new ConcurrentHashMap<>();
+
+    @Override
+    public Optional<StoredGame> findById(String gameId) {
+        return Optional.ofNullable(games.get(gameId));
+    }
+
+    @Override
+    public Optional<StoredGame> createIfAbsent(Game game) {
+        StoredGame fresh = new StoredGame(game, 0L);
+        StoredGame existing = games.putIfAbsent(game.id(), fresh);
+        return existing == null ? Optional.of(fresh) : Optional.empty();
+    }
+
+    @Override
+    public StoredGame save(StoredGame game) {
+        String gameId = game.game().id();
+
+        // Only the mapping function that actually wins the compare-and-swap records a
+        // result, so a losing writer cannot be mistaken for a winner by comparing versions.
+        StoredGame[] written = new StoredGame[1];
+        games.computeIfPresent(gameId, (id, current) -> {
+            if (current.version() != game.version()) {
+                return current; // someone else moved first; leave their state alone
+            }
+            written[0] = new StoredGame(game.game(), current.version() + 1);
+            return written[0];
+        });
+
+        if (written[0] == null) {
+            throw new ConcurrentGameUpdateException(gameId, game.version());
+        }
+        return written[0];
+    }
+}
