@@ -1,6 +1,6 @@
 package com.flamingo.tictactoe.engine.service;
 
-import com.flamingo.tictactoe.engine.repository.InMemoryGameRepository;
+import com.flamingo.tictactoe.engine.repository.inmemory.InMemoryGameRepository;
 import com.flamingo.tictactoe.engine.repository.StoredGame;
 import com.flamingo.tictactoe.engine.domain.GameStatus;
 import com.flamingo.tictactoe.engine.domain.Move;

@@ -5,7 +5,7 @@ spring:
   application:
     name: game-engine-service
   profiles:
-    # The in-memory store keeps the service runnable with no infrastructure.
+    # Runs with no infrastructure at all unless a store is explicitly selected.
     default: in-memory
 
 springdoc:
@@ -20,3 +20,25 @@ management:
   endpoint:
     health:
       show-details: always
+
+#No MongoAutoConfiguration for in-memory profile
+---
+spring:
+  config:
+    activate:
+      on-profile: in-memory
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration
+
+---
+spring:
+  config:
+    activate:
+      on-profile: mongo
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/tictactoe-games}
+      auto-index-creation: true

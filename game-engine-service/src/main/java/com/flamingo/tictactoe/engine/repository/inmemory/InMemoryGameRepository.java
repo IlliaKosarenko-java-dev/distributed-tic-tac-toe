@@ -1,5 +1,7 @@
-package com.flamingo.tictactoe.engine.repository;
+package com.flamingo.tictactoe.engine.repository.inmemory;
 
+import com.flamingo.tictactoe.engine.repository.GameRepository;
+import com.flamingo.tictactoe.engine.repository.StoredGame;
 import com.flamingo.tictactoe.engine.service.exception.ConcurrentGameUpdateException;
 import com.flamingo.tictactoe.engine.domain.Game;
 import org.springframework.context.annotation.Profile;
@@ -12,11 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Keeps games in a map so the service runs with no infrastructure at all — used by the
  * {@code in-memory} profile and by tests.
- *
- * <p>{@code putIfAbsent} and {@code computeIfPresent} do the same job the MongoDB adapter
- * gets from single-document atomicity: no two writers can interleave on one game. The
- * guarantee is per-JVM here rather than cluster-wide, which is exactly the limitation the
- * MongoDB adapter exists to remove.
  */
 @Repository
 @Profile("in-memory")
