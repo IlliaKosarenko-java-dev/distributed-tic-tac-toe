@@ -4,6 +4,46 @@ server:
 spring:
   application:
     name: game-session-service
+  profiles:
+    default: in-memory
+
+tictactoe:
+  engine:
+    # Overridden per environment; the gateway supplies the in-cluster address.
+    base-url: ${ENGINE_BASE_URL:http://localhost:8081}
+    connect-timeout: 1s
+    # Must stay well under the simulation's patience: an unbounded read would pin a thread
+    # and hide the outage from the circuit breaker entirely.
+    read-timeout: 2s
+
+resilience4j:
+  retry:
+    instances:
+      gameEngine:
+        max-attempts: 3
+        wait-duration: 100ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        # Only the transient failure type. A rejected move is a verdict, not a glitch, so
+        # naming the class here is what guarantees 4xx is never retried.
+        retry-exceptions:
+          - com.flamingo.tictactoe.session.client.exception.EngineUnavailableException
+  circuitbreaker:
+    instances:
+      gameEngine:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 5s
+        permitted-number-of-calls-in-half-open-state: 2
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - com.flamingo.tictactoe.session.client.exception.EngineUnavailableException
+        # A refusal says the engine is healthy enough to have an opinion, so it must not
+        # count towards opening the breaker.
+        ignore-exceptions:
+          - com.flamingo.tictactoe.session.client.exception.EngineRejectedException
 
 management:
   endpoints:
@@ -13,3 +53,28 @@ management:
   endpoint:
     health:
       show-details: always
+
+
+#No MongoAutoConfiguration for in-memory profile
+---
+spring:
+  config:
+    activate:
+      on-profile: in-memory
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration
+
+---
+spring:
+  config:
+    activate:
+      on-profile: mongo
+  data:
+    mongodb:
+      # Same MongoDB instance as the engine, a different database. The credentials this
+      # service uses are scoped to tictactoe-sessions, so it cannot read the games database.
+      uri: ${MONGODB_URI:mongodb://localhost:27017/tictactoe-sessions}
+      auto-index-creation: true

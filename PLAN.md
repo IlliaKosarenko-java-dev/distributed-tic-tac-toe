@@ -39,7 +39,7 @@ queryable result history real rather than simulated.
 | Framework | Spring Boot 3.3.x | Named in the brief; `ProblemDetail`, `RestClient`, `@HttpExchange` built in |
 | Build | Maven multi-module | Maven 3.9 installed; one `mvn verify` builds and tests everything |
 | Persistence | MongoDB 7 (Spring Data MongoDB) | Documents with no cross-entity relations; single-document atomicity gives distributed compare-and-swap for free |
-| Store topology | One MongoDB instance per service | Database-per-service; neither service ever reads the other's data |
+| Store topology | One MongoDB instance, one database per service | Database-per-service, enforced by scoped credentials rather than by separate containers — the boundary that matters is who may read what, not how many processes run |
 | Service-to-service | `RestClient` + `@HttpExchange` interface | Declarative, no Feign dependency, easy to stub in tests |
 | Resilience | Resilience4j | Retry w/ backoff + circuit breaker + timeouts on engine calls |
 | Real-time | SSE (`SseEmitter`) | One-way push is all the UI needs; simpler than WebSocket |
@@ -73,26 +73,36 @@ failure mode to test.
                               │ • SSE registry     │ │
                               └───┬────────────┬───┘ │
                                   │            │REST │
-                    ┌─────────────▼──────┐  ┌──▼─────▼───────────────┐
-                    │ mongo-session:27018│  │ game-engine-svc :8081  │
-                    │ sessions + history │  │ • Game aggregate       │
-                    └────────────────────┘  │ • move validation      │
-                                            │ • win / draw detection │
-                                            │ • optimistic CAS       │
-                                            └──────────┬─────────────┘
-                                                       │
-                                            ┌──────────▼─────────────┐
-                                            │ mongo-engine   :27017  │
-                                            │ games                  │
-                                            └────────────────────────┘
+                                  │         ┌──▼─────▼───────────────┐
+                                  │         │ game-engine-svc :8081  │
+                                  │         │ • Game aggregate       │
+                                  │         │ • move validation      │
+                                  │         │ • win / draw detection │
+                                  │         │ • optimistic CAS       │
+                                  │         └──────────┬─────────────┘
+                                  │                    │
+                            ┌─────▼────────────────────▼──────────┐
+                            │  mongodb :27017                     │
+                            │    db tictactoe-sessions  ← session │
+                            │    db tictactoe-games     ← engine  │
+                            │  (each service's user is scoped     │
+                            │   to its own database)              │
+                            └─────────────────────────────────────┘
 ```
 
 The gateway routes; it does not host. Keeping the UI out of the gateway artifact means a
 change to the board's stylesheet never triggers a redeploy of the component that carries all
 of the system's traffic.
 
-Database-per-service: each service owns its store exclusively, in its own container, and no
-other service ever reads it. All cross-service reads go through the REST API.
+Database-per-service on a shared MongoDB process: each service owns one database and connects
+with a user scoped to that database alone, so neither can read the other's collections. All
+cross-service reads go through the REST API.
+
+The isolation is logical rather than physical, and that trade is worth stating plainly: one
+instance means a shared failure domain and shared resources, which a production deployment
+would split apart. What it buys is a materially simpler setup — one container to start, wait
+on, and inspect. The property the architecture actually relies on is that no service can reach
+another's data, and per-database users enforce that as firmly as separate processes do.
 
 ---
 
@@ -410,7 +420,7 @@ concerns appear. If time runs short, phases 8–9 shrink and the project still d
 3. Run without Docker: `mvn spring-boot:run -Dspring-profiles.active=in-memory` per service, plus
    `python3 -m http.server 3000 --directory ui` and `UI_URL=http://localhost:3000` on the gateway
 4. `mvn verify` — what the test suite covers
-5. Architecture diagram + why two services, why database-per-service
+5. Architecture diagram + why two services, and why one database per service on a shared instance
 6. **Design decisions & trade-offs** — the section that actually gets read:
    - Why a document store for both services, and why one storage technology rather than two
    - Why the brief's H2 suggestion was deviated from, and how the `in-memory` profile keeps faith with it

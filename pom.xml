@@ -30,6 +30,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-cloud.version>2023.0.6</spring-cloud.version>
         <springdoc.version>2.6.0</springdoc.version>
+        <resilience4j.version>2.2.0</resilience4j.version>
+        <wiremock.version>3.13.2</wiremock.version>
         <!--
           Boot 3.3 pins Byte Buddy 1.14.x, which refuses to run on JDK 24+ and breaks every
           Mockito mock. Overridden so the build works on whatever JDK the reviewer happens to
