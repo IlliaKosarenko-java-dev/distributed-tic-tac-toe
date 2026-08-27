@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Distributed Tic Tac Toe</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="app">
+    <header>
+        <h1>Distributed Tic&nbsp;Tac&nbsp;Toe</h1>
+        <p class="subtitle">Two microservices play each other. Nobody clicks a square.</p>
+    </header>
+
+    <section class="controls" aria-label="Simulation controls">
+        <label>
+            X plays
+            <select id="x-strategy">
+                <option value="RULE_BASED" selected>Rule-based</option>
+                <option value="RANDOM">Random</option>
+            </select>
+        </label>
+        <label>
+            O plays
+            <select id="o-strategy">
+                <option value="RANDOM" selected>Random</option>
+                <option value="RULE_BASED">Rule-based</option>
+            </select>
+        </label>
+        <label>
+            Move delay
+            <select id="move-delay">
+                <option value="200">Fast (200ms)</option>
+                <option value="400" selected>Normal (400ms)</option>
+                <option value="900">Slow (900ms)</option>
+            </select>
+        </label>
+        <button id="start" type="button">Start Simulation</button>
+    </section>
+
+    <div id="error" class="error" role="alert" hidden></div>
+
+    <section class="game">
+        <div class="board-panel">
+            <div id="board" class="board" role="grid" aria-label="Game board"></div>
+            <p id="status" class="status status--idle">Ready when you are.</p>
+            <dl class="meta">
+                <dt>Session</dt>
+                <dd id="meta-session">—</dd>
+                <dt>Moves</dt>
+                <dd id="meta-moves">0</dd>
+            </dl>
+        </div>
+
+        <div class="log-panel">
+            <h2>Move log</h2>
+            <ol id="log" class="log" aria-live="polite"></ol>
+        </div>
+    </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
