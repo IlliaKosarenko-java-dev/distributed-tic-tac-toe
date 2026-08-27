@@ -2,6 +2,7 @@ package com.flamingo.tictactoe.session.repository.inmemory;
 
 import com.flamingo.tictactoe.session.domain.Session;
 import com.flamingo.tictactoe.session.domain.SessionStatus;
+import com.flamingo.tictactoe.session.repository.SessionQuery;
 import com.flamingo.tictactoe.session.repository.SessionRepository;
 import com.flamingo.tictactoe.session.repository.StoredSession;
 import com.flamingo.tictactoe.session.service.exception.ConcurrentSessionUpdateException;
@@ -9,6 +10,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,5 +77,23 @@ public class InMemorySessionRepository implements SessionRepository {
             throw new ConcurrentSessionUpdateException(sessionId, session.version());
         }
         return written[0];
+    }
+
+    @Override
+    public List<StoredSession> search(SessionQuery query) {
+        return sessions.values().stream()
+                .filter(stored -> matches(stored, query))
+                .sorted(Comparator.comparing(
+                        (StoredSession stored) -> stored.session().createdAt()).reversed())
+                .limit(query.limit())
+                .toList();
+    }
+
+    private static boolean matches(StoredSession stored, SessionQuery query) {
+        var session = stored.session();
+        return (query.status() == null || session.status() == query.status())
+                && (query.outcome() == null || session.gameOutcome() == query.outcome())
+                && (query.xStrategy() == null || session.xStrategy() == query.xStrategy())
+                && (query.oStrategy() == null || session.oStrategy() == query.oStrategy());
     }
 }

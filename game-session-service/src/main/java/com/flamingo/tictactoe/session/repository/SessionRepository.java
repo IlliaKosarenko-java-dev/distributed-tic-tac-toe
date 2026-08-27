@@ -4,6 +4,7 @@ import com.flamingo.tictactoe.session.domain.Session;
 import com.flamingo.tictactoe.session.service.exception.ConcurrentSessionUpdateException;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 public interface SessionRepository {
@@ -28,4 +29,7 @@ public interface SessionRepository {
      * @throws ConcurrentSessionUpdateException if the store advanced since the caller's read
      */
     StoredSession save(StoredSession session);
+
+    /** Sessions matching the query, newest first. */
+    List<StoredSession> search(SessionQuery query);
 }

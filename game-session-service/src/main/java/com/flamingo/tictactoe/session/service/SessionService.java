@@ -7,6 +7,7 @@ import com.flamingo.tictactoe.session.domain.Mark;
 import com.flamingo.tictactoe.session.domain.MoveRecord;
 import com.flamingo.tictactoe.session.domain.Session;
 import com.flamingo.tictactoe.session.domain.StrategyType;
+import com.flamingo.tictactoe.session.repository.SessionQuery;
 import com.flamingo.tictactoe.session.repository.SessionRepository;
 import com.flamingo.tictactoe.session.repository.StoredSession;
 import com.flamingo.tictactoe.session.service.exception.SessionNotFoundException;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -56,6 +58,10 @@ public class SessionService {
         return created;
     }
 
+    public List<StoredSession> search(SessionQuery query) {
+        return repository.search(query);
+    }
+
     public StoredSession findSession(String sessionId) {
         return repository.findById(sessionId)
                 .orElseThrow(() -> new SessionNotFoundException(sessionId));
@@ -78,10 +84,19 @@ public class SessionService {
                         sessionId, existing.session().status()));
     }
 
-    /** Picks the next cell for whoever is due to move, using that player's strategy. */
+    /**
+     * Picks a cell for the given player from the given board.
+     *
+     * <p>The board is a parameter rather than read off the session because the engine's latest
+     * response is the authoritative position; the session's copy is a mirror for reads.
+     */
+    public int chooseMove(Session session, Mark player, BoardSnapshot board) {
+        return strategies.of(session.strategyFor(player)).chooseMove(board, player);
+    }
+
+    /** Convenience for callers with nothing fresher than the session's own cached board. */
     public int chooseNextMove(Session session) {
-        Mark player = session.nextPlayer();
-        return strategies.of(session.strategyFor(player)).chooseMove(session.board(), player);
+        return chooseMove(session, session.nextPlayer(), session.board());
     }
 
     /** Appends a move and refreshes the cached board from what the engine reported. */

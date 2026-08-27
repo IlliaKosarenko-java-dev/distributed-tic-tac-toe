@@ -45,6 +45,10 @@ resilience4j:
         ignore-exceptions:
           - com.flamingo.tictactoe.session.client.exception.EngineRejectedException
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
 management:
   endpoints:
     web:
