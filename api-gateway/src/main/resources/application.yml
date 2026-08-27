@@ -4,14 +4,44 @@ server:
 spring:
   application:
     name: api-gateway
+  cloud:
+    gateway:
+      httpclient:
+        connect-timeout: 1000
+        # No response-timeout on purpose. It would apply to the SSE stream too, cutting a
+        # watched game off mid-play; the services enforce their own timeouts instead.
+      routes:
+        # API routes are ordered ahead of the UI catch-all below. Reversed, the catch-all
+        # would swallow /api/** and every call would be answered with index.html.
+        - id: sessions
+          uri: ${SESSION_SERVICE_URL:http://localhost:8082}
+          order: 0
+          predicates:
+            - Path=/api/sessions/**
+          filters:
+            # The browser calls /api/sessions/...; the service serves /sessions/...
+            - StripPrefix=1
 
-# Routes to the engine and session services are added in phase 7.
+        - id: games
+          uri: ${ENGINE_SERVICE_URL:http://localhost:8081}
+          order: 0
+          predicates:
+            - Path=/api/games/**
+          filters:
+            - StripPrefix=1
+
+        # Everything else is the UI, which is its own deployable behind nginx.
+        - id: ui
+          uri: ${UI_URL:http://localhost:3000}
+          order: 100
+          predicates:
+            - Path=/**
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,gateway
   endpoint:
     health:
       show-details: always

@@ -1,0 +1,181 @@
+:root {
+    --bg: #10131a;
+    --panel: #181d27;
+    --panel-edge: #262d3a;
+    --text: #e6e9ef;
+    --muted: #8b93a3;
+    --x: #5fa8ff;
+    --o: #ffa657;
+    --win: #3fb950;
+    --error: #f4685f;
+    --accent: #5fa8ff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1rem 3rem;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.app { max-width: 960px; margin: 0 auto; }
+
+header h1 { margin: 0 0 .25rem; font-size: 1.75rem; letter-spacing: -.02em; }
+.subtitle { margin: 0 0 1.75rem; color: var(--muted); }
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+    padding: 1rem 1.25rem;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 12px;
+}
+
+.controls label {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted);
+}
+
+.controls select {
+    background: #0e1219;
+    color: var(--text);
+    border: 1px solid var(--panel-edge);
+    border-radius: 8px;
+    padding: .5rem .6rem;
+    font-size: .95rem;
+}
+
+button {
+    margin-left: auto;
+    padding: .65rem 1.4rem;
+    font-size: .95rem;
+    font-weight: 600;
+    color: #06101f;
+    background: var(--accent);
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+button:hover:not(:disabled) { filter: brightness(1.1); }
+button:disabled { opacity: .5; cursor: progress; }
+
+.error {
+    margin-top: 1rem;
+    padding: .8rem 1rem;
+    background: rgba(244, 104, 95, .12);
+    border: 1px solid var(--error);
+    border-radius: 10px;
+    color: var(--error);
+}
+
+.game {
+    display: grid;
+    grid-template-columns: minmax(280px, 340px) 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+@media (max-width: 720px) {
+    .game { grid-template-columns: 1fr; }
+}
+
+.board-panel, .log-panel {
+    padding: 1.25rem;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 12px;
+}
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    aspect-ratio: 1;
+}
+
+.cell {
+    display: grid;
+    place-items: center;
+    background: #0e1219;
+    border: 1px solid var(--panel-edge);
+    border-radius: 10px;
+    font-size: clamp(2rem, 9vw, 3.25rem);
+    font-weight: 700;
+    line-height: 1;
+    transition: background .15s ease, transform .15s ease;
+}
+
+.cell--x { color: var(--x); }
+.cell--o { color: var(--o); }
+
+/* The cell played most recently, so the eye can follow the game. */
+.cell--latest { transform: scale(1.04); border-color: var(--accent); }
+
+.cell--win {
+    background: rgba(63, 185, 80, .16);
+    border-color: var(--win);
+    color: var(--win);
+}
+
+.status {
+    margin: 1rem 0 .5rem;
+    padding: .5rem .75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.status--idle    { background: #0e1219; color: var(--muted); }
+.status--running { background: rgba(95, 168, 255, .14); color: var(--x); }
+.status--won     { background: rgba(63, 185, 80, .16); color: var(--win); }
+.status--draw    { background: rgba(139, 147, 163, .16); color: var(--muted); }
+.status--failed  { background: rgba(244, 104, 95, .14); color: var(--error); }
+
+.meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .25rem 1rem;
+    margin: 0;
+    font-size: .82rem;
+    color: var(--muted);
+}
+
+.meta dt { text-transform: uppercase; letter-spacing: .06em; }
+.meta dd { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); }
+
+.log-panel h2 { margin: 0 0 .75rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+
+.log {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: 340px;
+    overflow-y: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .88rem;
+}
+
+.log li {
+    display: flex;
+    gap: .75rem;
+    padding: .35rem .5rem;
+    border-bottom: 1px solid var(--panel-edge);
+}
+
+.log li:last-child { border-bottom: 0; }
+.log .seq { color: var(--muted); min-width: 1.75rem; }
+.log .player--X { color: var(--x); font-weight: 700; }
+.log .player--O { color: var(--o); font-weight: 700; }
+.log .note { color: var(--muted); }

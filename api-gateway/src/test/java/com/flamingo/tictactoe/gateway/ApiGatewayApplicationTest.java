@@ -8,6 +8,6 @@ class ApiGatewayApplicationTest {
 
     @Test
     void contextLoads() {
-        // Fails the build if wiring or configuration is broken.
+        // Assert application is up and no error
     }
 }
