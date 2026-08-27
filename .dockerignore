@@ -1,0 +1,10 @@
+# Keep the build context small and stop host build output leaking into images.
+**/target/
+.git/
+.idea/
+*.iml
+**/*.log
+.env
+docker-compose.yml
+PLAN.md
+README.md

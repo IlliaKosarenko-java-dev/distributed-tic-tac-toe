@@ -1,0 +1,97 @@
+services:
+
+  mongodb:
+    image: mongo:7
+    container_name: ttt-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-root-dev-password}
+      MONGO_ENGINE_PASSWORD: ${MONGO_ENGINE_PASSWORD:-engine-dev-password}
+      MONGO_SESSION_PASSWORD: ${MONGO_SESSION_PASSWORD:-session-dev-password}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+      # Runs only on first initialisation of an empty data directory.
+      - ./docker/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [tictactoe]
+
+  game-engine-service:
+    build:
+      context: .
+      dockerfile: game-engine-service/Dockerfile
+    container_name: ttt-engine
+    environment:
+      SPRING_PROFILES_ACTIVE: mongo
+      MONGODB_URI: mongodb://engine:${MONGO_ENGINE_PASSWORD:-engine-dev-password}@mongodb:27017/tictactoe-games?authSource=tictactoe-games
+    ports:
+      # Published for poking at Swagger UI directly. In production only the gateway
+      # would be reachable from outside.
+      - "8081:8081"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks: [tictactoe]
+
+  game-session-service:
+    build:
+      context: .
+      dockerfile: game-session-service/Dockerfile
+    container_name: ttt-session
+    environment:
+      SPRING_PROFILES_ACTIVE: mongo
+      MONGODB_URI: mongodb://session:${MONGO_SESSION_PASSWORD:-session-dev-password}@mongodb:27017/tictactoe-sessions?authSource=tictactoe-sessions
+      ENGINE_BASE_URL: http://game-engine-service:8081
+    ports:
+      - "8082:8082"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      game-engine-service:
+        condition: service_healthy
+    networks: [tictactoe]
+
+  ui:
+    build:
+      context: ./ui
+    container_name: ttt-ui
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/index.html"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [tictactoe]
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: ttt-gateway
+    environment:
+      ENGINE_SERVICE_URL: http://game-engine-service:8081
+      SESSION_SERVICE_URL: http://game-session-service:8082
+      UI_URL: http://ui:80
+    ports:
+      # The only port anyone actually needs.
+      - "8080:8080"
+    depends_on:
+      game-session-service:
+        condition: service_healthy
+      game-engine-service:
+        condition: service_healthy
+      ui:
+        condition: service_healthy
+    networks: [tictactoe]
+
+volumes:
+  mongo-data:
+
+networks:
+  tictactoe:
+    driver: bridge
