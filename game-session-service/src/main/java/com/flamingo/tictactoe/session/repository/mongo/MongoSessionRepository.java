@@ -3,6 +3,7 @@ package com.flamingo.tictactoe.session.repository.mongo;
 import com.flamingo.tictactoe.session.domain.Session;
 import com.flamingo.tictactoe.session.domain.SessionStatus;
 import com.flamingo.tictactoe.session.mapper.SessionDocumentMapper;
+import com.flamingo.tictactoe.session.repository.SessionQuery;
 import com.flamingo.tictactoe.session.repository.SessionRepository;
 import com.flamingo.tictactoe.session.repository.StoredSession;
 import com.flamingo.tictactoe.session.service.exception.ConcurrentSessionUpdateException;
@@ -13,10 +14,12 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -80,6 +83,35 @@ public class MongoSessionRepository implements SessionRepository {
         } catch (OptimisticLockingFailureException lostTheRace) {
             throw new ConcurrentSessionUpdateException(sessionId, session.version());
         }
+    }
+
+    /**
+     * Filters and sorts in the database rather than in memory, which is the point of having a
+     * queryable store: the indexes on status and outcome do the work.
+     */
+    @Override
+    public List<StoredSession> search(SessionQuery query) {
+        Criteria criteria = new Criteria();
+        if (query.status() != null) {
+            criteria = criteria.and("status").is(query.status());
+        }
+        if (query.outcome() != null) {
+            criteria = criteria.and("gameOutcome").is(query.outcome());
+        }
+        if (query.xStrategy() != null) {
+            criteria = criteria.and("xStrategy").is(query.xStrategy());
+        }
+        if (query.oStrategy() != null) {
+            criteria = criteria.and("oStrategy").is(query.oStrategy());
+        }
+
+        Query mongoQuery = new Query(criteria)
+                .with(Sort.by(Sort.Direction.DESC, "createdAt"))
+                .limit(query.limit());
+
+        return mongoTemplate.find(mongoQuery, SessionDocument.class).stream()
+                .map(mapper::toStoredSession)
+                .toList();
     }
 
     Instant now() {
