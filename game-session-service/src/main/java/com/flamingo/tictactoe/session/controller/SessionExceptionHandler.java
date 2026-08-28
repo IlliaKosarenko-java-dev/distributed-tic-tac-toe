@@ -13,13 +13,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.net.URI;
+import java.util.UUID;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
@@ -105,6 +108,30 @@ public class SessionExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problem =
                 problem(HttpStatus.BAD_REQUEST, "Validation failed", detail, "VALIDATION_FAILED");
         problem.setProperty("errors", violations);
+
+        return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
+    }
+
+    /**
+     * A path variable that will not convert — almost always a session id that is not a UUID.
+     * Binding fails before any handler method runs, so this needs its own mapping or the
+     * caller gets a bare 400 with no clue which value was wrong.
+     */
+    @Override
+    protected ResponseEntity<Object> handleTypeMismatch(
+            TypeMismatchException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+
+        String name = ex instanceof MethodArgumentTypeMismatchException mismatch
+                ? mismatch.getName() : "parameter";
+        boolean expectingUuid = ex.getRequiredType() != null
+                && UUID.class.isAssignableFrom(ex.getRequiredType());
+
+        ProblemDetail problem = problem(HttpStatus.BAD_REQUEST,
+                expectingUuid ? "Invalid identifier" : "Invalid parameter",
+                "%s '%s' is not %s".formatted(name, ex.getValue(),
+                        expectingUuid ? "a valid UUID" : "valid"),
+                expectingUuid ? "INVALID_UUID" : "INVALID_PARAMETER");
+        problem.setProperty("parameter", name);
 
         return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
     }

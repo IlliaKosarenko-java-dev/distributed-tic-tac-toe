@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.dto;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.domain.GameOutcome;
 import com.flamingo.tictactoe.session.domain.Mark;
 import com.flamingo.tictactoe.session.domain.Session;
@@ -16,8 +17,8 @@ import java.util.List;
  * @param moves  the full history — bounded at nine, so there is no reason to paginate it
  */
 public record SessionResponse(
-        String sessionId,
-        String gameId,
+        UUID sessionId,
+        UUID gameId,
         SessionStatus status,
         StrategyType xStrategy,
         StrategyType oStrategy,

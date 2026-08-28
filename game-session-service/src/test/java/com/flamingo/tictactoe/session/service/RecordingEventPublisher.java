@@ -1,13 +1,14 @@
 package com.flamingo.tictactoe.session.service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /** Captures published events so a test can assert what a watcher would have seen. */
 public class RecordingEventPublisher implements SessionEventPublisher {
 
     private final List<SessionEvent> events = new CopyOnWriteArrayList<>();
-    private final List<String> closedStreams = new CopyOnWriteArrayList<>();
+    private final List<UUID> closedStreams = new CopyOnWriteArrayList<>();
 
     @Override
     public void publish(SessionEvent event) {
@@ -15,7 +16,7 @@ public class RecordingEventPublisher implements SessionEventPublisher {
     }
 
     @Override
-    public void closeStream(String sessionId) {
+    public void closeStream(UUID sessionId) {
         closedStreams.add(sessionId);
     }
 
@@ -27,7 +28,7 @@ public class RecordingEventPublisher implements SessionEventPublisher {
         return events.stream().map(SessionEvent::name).toList();
     }
 
-    public List<String> closedStreams() {
+    public List<UUID> closedStreams() {
         return List.copyOf(closedStreams);
     }
 

@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.client;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.client.exception.EngineRejectedException;
 import com.flamingo.tictactoe.session.client.exception.EngineUnavailableException;
 import com.flamingo.tictactoe.session.domain.Mark;
@@ -37,8 +38,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @ActiveProfiles("in-memory")
 class GameEngineResilienceTest {
 
-    private static final String GAME_ID = "game-1";
-    private static final String MOVE_PATH = "/games/game-1/move";
+    private static final UUID GAME_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    private static final String MOVE_PATH = "/games/" + GAME_ID + "/move";
 
     private static WireMockServer engine;
 
@@ -72,7 +73,7 @@ class GameEngineResilienceTest {
 
     private static String okBody() {
         return """
-                {"gameId":"game-1","board":["X",null,null,null,null,null,null,null,null],
+                {"gameId":"11111111-1111-1111-1111-111111111111","board":["X",null,null,null,null,null,null,null,null],
                  "nextPlayer":"O","status":"IN_PROGRESS","moveCount":1,"version":1,
                  "winningLine":null}
                 """;

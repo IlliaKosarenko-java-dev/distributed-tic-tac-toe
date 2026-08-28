@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.service;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.config.InstanceIdentity;
 import com.flamingo.tictactoe.session.domain.GameOutcome;
 import com.flamingo.tictactoe.session.domain.Mark;
@@ -61,9 +62,9 @@ class SessionServiceTest {
 
         @Test
         void givesEachSessionADistinctId() {
-            String first = service.createSession(StrategyType.RANDOM, StrategyType.RANDOM, 0)
+            UUID first = service.createSession(StrategyType.RANDOM, StrategyType.RANDOM, 0)
                     .session().sessionId();
-            String second = service.createSession(StrategyType.RANDOM, StrategyType.RANDOM, 0)
+            UUID second = service.createSession(StrategyType.RANDOM, StrategyType.RANDOM, 0)
                     .session().sessionId();
 
             assertThat(first).isNotEqualTo(second);
@@ -75,7 +76,7 @@ class SessionServiceTest {
 
         @Test
         void readsBackACreatedSession() {
-            String id = service.createSession(StrategyType.RANDOM, StrategyType.RANDOM, 0)
+            UUID id = service.createSession(StrategyType.RANDOM, StrategyType.RANDOM, 0)
                     .session().sessionId();
 
             assertThat(service.findSession(id).session().sessionId()).isEqualTo(id);
@@ -83,7 +84,7 @@ class SessionServiceTest {
 
         @Test
         void failsOnAnUnknownSession() {
-            assertThatThrownBy(() -> service.findSession("nope"))
+            assertThatThrownBy(() -> service.findSession(UUID.randomUUID()))
                     .isInstanceOf(SessionNotFoundException.class);
         }
     }
@@ -93,7 +94,7 @@ class SessionServiceTest {
 
         @Test
         void claimingMarksTheSessionRunningAndStampsThisInstance() {
-            String id = service.createSession(StrategyType.RANDOM, StrategyType.RANDOM, 0)
+            UUID id = service.createSession(StrategyType.RANDOM, StrategyType.RANDOM, 0)
                     .session().sessionId();
 
             StoredSession claimed = service.claimForSimulation(id);
@@ -105,7 +106,7 @@ class SessionServiceTest {
 
         @Test
         void aSecondClaimIsRefusedAndReportsTheCurrentStatus() {
-            String id = service.createSession(StrategyType.RANDOM, StrategyType.RANDOM, 0)
+            UUID id = service.createSession(StrategyType.RANDOM, StrategyType.RANDOM, 0)
                     .session().sessionId();
             service.claimForSimulation(id);
 
@@ -117,7 +118,7 @@ class SessionServiceTest {
 
         @Test
         void claimingAnUnknownSessionReportsItMissingRatherThanAlreadyStarted() {
-            assertThatThrownBy(() -> service.claimForSimulation("nope"))
+            assertThatThrownBy(() -> service.claimForSimulation(UUID.randomUUID()))
                     .isInstanceOf(SessionNotFoundException.class);
         }
     }

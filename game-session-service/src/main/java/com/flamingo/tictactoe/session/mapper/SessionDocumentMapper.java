@@ -8,6 +8,7 @@ import com.flamingo.tictactoe.session.repository.mongo.SessionDocument;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Translates between the {@link Session} aggregate and its stored form, keeping that knowledge
@@ -26,8 +27,8 @@ public class SessionDocumentMapper {
                 .toList();
 
         return new SessionDocument(
-                session.sessionId(),
-                session.gameId(),
+                session.sessionId().toString(),
+                session.gameId().toString(),
                 session.status(),
                 session.xStrategy(),
                 session.oStrategy(),
@@ -52,8 +53,8 @@ public class SessionDocumentMapper {
                         .toList();
 
         return Session.restore(
-                document.id(),
-                document.gameId(),
+                UUID.fromString(document.id()),
+                UUID.fromString(document.gameId()),
                 document.status(),
                 document.xStrategy(),
                 document.oStrategy(),

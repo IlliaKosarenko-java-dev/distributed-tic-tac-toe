@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.client;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.client.dto.CreateGameCommand;
 import com.flamingo.tictactoe.session.client.dto.EngineGameStateResponse;
 import com.flamingo.tictactoe.session.client.dto.PlayMoveCommand;
@@ -20,8 +21,8 @@ public interface GameEngineClient {
     EngineGameStateResponse createGame(@RequestBody CreateGameCommand command);
 
     @GetExchange("/games/{gameId}")
-    EngineGameStateResponse getGame(@PathVariable String gameId);
+    EngineGameStateResponse getGame(@PathVariable UUID gameId);
 
     @PostExchange("/games/{gameId}/move")
-    EngineGameStateResponse move(@PathVariable String gameId, @RequestBody PlayMoveCommand command);
+    EngineGameStateResponse move(@PathVariable UUID gameId, @RequestBody PlayMoveCommand command);
 }

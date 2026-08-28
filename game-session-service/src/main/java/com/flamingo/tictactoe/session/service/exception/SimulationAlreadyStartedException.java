@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.service.exception;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.domain.SessionStatus;
 
 /**
@@ -8,17 +9,17 @@ import com.flamingo.tictactoe.session.domain.SessionStatus;
  */
 public class SimulationAlreadyStartedException extends RuntimeException {
 
-    private final String sessionId;
+    private final UUID sessionId;
     private final SessionStatus currentStatus;
 
-    public SimulationAlreadyStartedException(String sessionId, SessionStatus currentStatus) {
+    public SimulationAlreadyStartedException(UUID sessionId, SessionStatus currentStatus) {
         super("Simulation for session %s cannot start: it is already %s"
                 .formatted(sessionId, currentStatus));
         this.sessionId = sessionId;
         this.currentStatus = currentStatus;
     }
 
-    public String sessionId() {
+    public UUID sessionId() {
         return sessionId;
     }
 

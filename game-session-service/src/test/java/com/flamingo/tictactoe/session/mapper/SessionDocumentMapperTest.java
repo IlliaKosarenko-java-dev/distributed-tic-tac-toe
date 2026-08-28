@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.mapper;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.domain.GameOutcome;
 import com.flamingo.tictactoe.session.domain.Mark;
 import com.flamingo.tictactoe.session.domain.MoveRecord;
@@ -20,18 +21,21 @@ class SessionDocumentMapperTest {
 
     private static final Instant NOW = Instant.parse("2026-01-01T10:00:00Z");
 
+    private static final UUID SESSION_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
     private final SessionDocumentMapper mapper = new SessionDocumentMapper();
 
     private static Session created() {
-        return Session.create("s1", "s1", StrategyType.RULE_BASED, StrategyType.RANDOM, 250, NOW);
+        return Session.create(SESSION_ID, SESSION_ID, StrategyType.RULE_BASED,
+                StrategyType.RANDOM, 250, NOW);
     }
 
     @Test
     void carriesAFreshSessionOntoTheDocument() {
         SessionDocument document = mapper.toDocument(created(), null);
 
-        assertThat(document.id()).isEqualTo("s1");
-        assertThat(document.gameId()).isEqualTo("s1");
+        assertThat(document.id()).isEqualTo(SESSION_ID.toString());
+        assertThat(document.gameId()).isEqualTo(SESSION_ID.toString());
         assertThat(document.status()).isEqualTo(SessionStatus.CREATED);
         assertThat(document.xStrategy()).isEqualTo(StrategyType.RULE_BASED);
         assertThat(document.oStrategy()).isEqualTo(StrategyType.RANDOM);
@@ -46,7 +50,7 @@ class SessionDocumentMapperTest {
     void roundTripsAnEmptySessionUnchanged() {
         Session restored = mapper.toDomain(mapper.toDocument(created(), 0L));
 
-        assertThat(restored.sessionId()).isEqualTo("s1");
+        assertThat(restored.sessionId()).isEqualTo(SESSION_ID);
         assertThat(restored.status()).isEqualTo(SessionStatus.CREATED);
         assertThat(restored.moves()).isEmpty();
         assertThat(restored.board().freePositions()).hasSize(9);
@@ -119,7 +123,7 @@ class SessionDocumentMapperTest {
     @Test
     void toleratesADocumentWithNoMoveArrayAtAll() {
         SessionDocument sparse = new SessionDocument(
-                "s1", "s1", SessionStatus.CREATED, StrategyType.RANDOM, StrategyType.RANDOM,
+                SESSION_ID.toString(), SESSION_ID.toString(), SessionStatus.CREATED, StrategyType.RANDOM, StrategyType.RANDOM,
                 0, board(".........").cells(), GameOutcome.IN_PROGRESS,
                 null, null, 0L, NOW, null, null, null);
 

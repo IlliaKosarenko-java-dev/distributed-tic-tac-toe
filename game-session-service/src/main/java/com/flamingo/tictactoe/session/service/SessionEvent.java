@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.service;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.domain.GameOutcome;
 import com.flamingo.tictactoe.session.domain.Mark;
 import com.flamingo.tictactoe.session.domain.SessionStatus;
@@ -14,12 +15,12 @@ import java.util.List;
  */
 public sealed interface SessionEvent {
 
-    String sessionId();
+    UUID sessionId();
 
     /** The SSE event name a browser listens for. */
     String name();
 
-    record Snapshot(String sessionId, SessionStatus status, GameOutcome outcome,
+    record Snapshot(UUID sessionId, SessionStatus status, GameOutcome outcome,
                     List<Mark> board, int moveCount) implements SessionEvent {
         @Override
         public String name() {
@@ -27,7 +28,7 @@ public sealed interface SessionEvent {
         }
     }
 
-    record MoveMade(String sessionId, int seq, Mark player, int position,
+    record MoveMade(UUID sessionId, int seq, Mark player, int position,
                     List<Mark> board, GameOutcome outcome, long version) implements SessionEvent {
         @Override
         public String name() {
@@ -35,14 +36,14 @@ public sealed interface SessionEvent {
         }
     }
 
-    record StatusChanged(String sessionId, SessionStatus status) implements SessionEvent {
+    record StatusChanged(UUID sessionId, SessionStatus status) implements SessionEvent {
         @Override
         public String name() {
             return "status";
         }
     }
 
-    record Finished(String sessionId, GameOutcome outcome, int moveCount,
+    record Finished(UUID sessionId, GameOutcome outcome, int moveCount,
                     List<Integer> winningLine) implements SessionEvent {
         @Override
         public String name() {
@@ -51,7 +52,7 @@ public sealed interface SessionEvent {
     }
 
     /** A simulation that could not complete, with the engine's code when there was one. */
-    record Failed(String sessionId, String code, String message) implements SessionEvent {
+    record Failed(UUID sessionId, String code, String message) implements SessionEvent {
         @Override
         public String name() {
             return "error";

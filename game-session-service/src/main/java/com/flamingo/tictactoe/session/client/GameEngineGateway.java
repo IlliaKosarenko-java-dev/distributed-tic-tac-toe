@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.client;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.client.dto.CreateGameCommand;
 import com.flamingo.tictactoe.session.client.dto.EngineGameStateResponse;
 import com.flamingo.tictactoe.session.client.dto.PlayMoveCommand;
@@ -41,20 +42,20 @@ public class GameEngineGateway {
 
     @Retry(name = INSTANCE)
     @CircuitBreaker(name = INSTANCE)
-    public EngineGameState createGame(String gameId, Mark startingPlayer) {
+    public EngineGameState createGame(UUID gameId, Mark startingPlayer) {
         return call(() -> client.createGame(new CreateGameCommand(gameId, startingPlayer.name())),
                 "create game " + gameId);
     }
 
     @Retry(name = INSTANCE)
     @CircuitBreaker(name = INSTANCE)
-    public EngineGameState getGame(String gameId) {
+    public EngineGameState getGame(UUID gameId) {
         return call(() -> client.getGame(gameId), "read game " + gameId);
     }
 
     @Retry(name = INSTANCE)
     @CircuitBreaker(name = INSTANCE)
-    public EngineGameState applyMove(String gameId, Mark player, int position, Long expectedVersion) {
+    public EngineGameState applyMove(UUID gameId, Mark player, int position, Long expectedVersion) {
         return call(() -> client.move(gameId, new PlayMoveCommand(player.name(), position, expectedVersion)),
                 "play %s at %d in game %s".formatted(player, position, gameId));
     }

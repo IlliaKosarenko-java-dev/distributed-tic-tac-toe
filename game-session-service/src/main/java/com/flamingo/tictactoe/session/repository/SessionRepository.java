@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.repository;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.domain.Session;
 import com.flamingo.tictactoe.session.service.exception.ConcurrentSessionUpdateException;
 
@@ -9,7 +10,7 @@ import java.util.Optional;
 
 public interface SessionRepository {
 
-    Optional<StoredSession> findById(String sessionId);
+    Optional<StoredSession> findById(UUID sessionId);
 
     StoredSession create(Session session);
 
@@ -23,7 +24,7 @@ public interface SessionRepository {
      * @return the claimed session, or empty if it was not in CREATED, meaning someone else
      *         already owns it
      */
-    Optional<StoredSession> claimForSimulation(String sessionId, String owner, Instant startedAt);
+    Optional<StoredSession> claimForSimulation(UUID sessionId, String owner, Instant startedAt);
 
     /**
      * @throws ConcurrentSessionUpdateException if the store advanced since the caller's read
