@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.engine.controller;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.engine.service.GameCreationResult;
 import com.flamingo.tictactoe.engine.service.GameService;
 import com.flamingo.tictactoe.engine.service.exception.ConcurrentGameUpdateException;
@@ -40,7 +41,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(GameController.class)
 class GameControllerTest {
 
-    private static final String GAME_ID = "game-1";
+    private static final UUID GAME_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    private static final UUID UNKNOWN_GAME_ID = UUID.fromString("99999999-9999-9999-9999-999999999999");
 
     @Autowired
     private MockMvc mockMvc;
@@ -63,9 +65,9 @@ class GameControllerTest {
             mockMvc.perform(post("/games")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
-                                    {"gameId":"game-1","startingPlayer":"X"}"""))
+                                    {"gameId":"11111111-1111-1111-1111-111111111111","startingPlayer":"X"}"""))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.gameId").value(GAME_ID))
+                    .andExpect(jsonPath("$.gameId").value(GAME_ID.toString()))
                     .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
                     .andExpect(jsonPath("$.version").value(0))
                     .andExpect(jsonPath("$.moveCount").value(0))
@@ -83,7 +85,7 @@ class GameControllerTest {
             mockMvc.perform(post("/games")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
-                                    {"gameId":"game-1"}"""))
+                                    {"gameId":"11111111-1111-1111-1111-111111111111"}"""))
                     .andExpect(status().isOk());
         }
 
@@ -125,9 +127,9 @@ class GameControllerTest {
 
         @Test
         void returns404ForAnUnknownGame() throws Exception {
-            given(gameService.findGame("nope")).willThrow(new GameNotFoundException("nope"));
+            given(gameService.findGame(UNKNOWN_GAME_ID)).willThrow(new GameNotFoundException(UNKNOWN_GAME_ID));
 
-            mockMvc.perform(get("/games/{id}", "nope"))
+            mockMvc.perform(get("/games/{id}", UNKNOWN_GAME_ID))
                     .andExpect(status().isNotFound())
                     .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                     .andExpect(jsonPath("$.code").value("GAME_NOT_FOUND"))
@@ -207,10 +209,10 @@ class GameControllerTest {
 
         @Test
         void returns404WhenTheGameDoesNotExist() throws Exception {
-            willThrow(new GameNotFoundException("nope"))
-                    .given(gameService).applyMove(eq("nope"), any(), any());
+            willThrow(new GameNotFoundException(UNKNOWN_GAME_ID))
+                    .given(gameService).applyMove(eq(UNKNOWN_GAME_ID), any(), any());
 
-            mockMvc.perform(post("/games/{id}/move", "nope")
+            mockMvc.perform(post("/games/{id}/move", UNKNOWN_GAME_ID)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     {"player":"X","position":4}"""))
@@ -287,29 +289,28 @@ class GameControllerTest {
             verify(gameService, never()).applyMove(any(), any(), any());
         }
 
-        @ParameterizedTest(name = "gameId {0} is rejected")
-        @CsvSource({"'has spaces'", "'drop;table'", "'sl/ash'"})
-        void returns400ForAGameIdWithUnsafeCharacters(String gameId) throws Exception {
+        @ParameterizedTest(name = "gameId {0} is not a UUID")
+        @CsvSource({"'has spaces'", "'drop;table'", "'sl/ash'", "game-1", "'11111111-1111'"})
+        void returns400ForAGameIdThatIsNotAUuid(String gameId) throws Exception {
             mockMvc.perform(post("/games")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     {"gameId":"%s"}""".formatted(gameId)))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
-                    .andExpect(jsonPath("$.errors[0].field").value("gameId"));
+                    .andExpect(jsonPath("$.code").value("INVALID_UUID"));
 
             verify(gameService, never()).createGame(any(), any());
         }
 
+        /** A malformed id in the path converts before the handler runs, so it needs its own mapping. */
         @Test
-        void returns400ForAnOverlongGameId() throws Exception {
-            mockMvc.perform(post("/games")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("""
-                                    {"gameId":"%s"}""".formatted("g".repeat(65))))
+        void returns400ForAPathIdThatIsNotAUuid() throws Exception {
+            mockMvc.perform(get("/games/{id}", "not-a-uuid"))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
-                    .andExpect(jsonPath("$.errors[0].field").value("gameId"));
+                    .andExpect(jsonPath("$.code").value("INVALID_UUID"))
+                    .andExpect(jsonPath("$.parameter").value("gameId"));
+
+            verify(gameService, never()).findGame(any());
         }
 
         @Test

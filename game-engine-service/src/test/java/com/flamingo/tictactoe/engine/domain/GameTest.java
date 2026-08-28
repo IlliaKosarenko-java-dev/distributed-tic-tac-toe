@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.engine.domain;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.engine.domain.exception.InvalidPositionException;
 import com.flamingo.tictactoe.engine.domain.exception.MoveRejectedException;
 import org.assertj.core.api.InstanceOfAssertFactories;
@@ -18,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class GameTest {
 
-    private static final String GAME_ID = "game-1";
+    private static final UUID GAME_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
     private static Game newGame() {
         return Game.newGame(GAME_ID, Player.X);

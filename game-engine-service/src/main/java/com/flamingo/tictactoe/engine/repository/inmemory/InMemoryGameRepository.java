@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -19,10 +20,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @Profile("in-memory")
 public class InMemoryGameRepository implements GameRepository {
 
-    private final Map<String, StoredGame> games = new ConcurrentHashMap<>();
+    private final Map<UUID, StoredGame> games = new ConcurrentHashMap<>();
 
     @Override
-    public Optional<StoredGame> findById(String gameId) {
+    public Optional<StoredGame> findById(UUID gameId) {
         return Optional.ofNullable(games.get(gameId));
     }
 
@@ -35,7 +36,7 @@ public class InMemoryGameRepository implements GameRepository {
 
     @Override
     public StoredGame save(StoredGame game) {
-        String gameId = game.game().id();
+        UUID gameId = game.game().id();
 
         // Only the mapping function that actually wins the compare-and-swap records a
         // result, so a losing writer cannot be mistaken for a winner by comparing versions.

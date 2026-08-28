@@ -36,10 +36,8 @@ public class GameService {
      *
      * @return the game, and whether this call is the one that created it
      */
-    public GameCreationResult createGame(String requestedId, Player startingPlayer) {
-        String gameId = (requestedId == null || requestedId.isBlank())
-                ? UUID.randomUUID().toString()
-                : requestedId;
+    public GameCreationResult createGame(UUID requestedId, Player startingPlayer) {
+        UUID gameId = requestedId == null ? UUID.randomUUID() : requestedId;
 
         Optional<StoredGame> created = repository.createIfAbsent(Game.newGame(gameId, startingPlayer));
         if (created.isPresent()) {
@@ -51,7 +49,7 @@ public class GameService {
         return new GameCreationResult(requireGame(gameId), false);
     }
 
-    public StoredGame findGame(String gameId) {
+    public StoredGame findGame(UUID gameId) {
         return requireGame(gameId);
     }
 
@@ -62,7 +60,7 @@ public class GameService {
      * @param expectedVersion optional client-side check; when supplied and already stale the
      *                        move is refused without troubling the domain
      */
-    public StoredGame applyMove(String gameId, Move move, Long expectedVersion) {
+    public StoredGame applyMove(UUID gameId, Move move, Long expectedVersion) {
         StoredGame stored = requireGame(gameId);
 
         if (expectedVersion != null && expectedVersion != stored.version()) {
@@ -77,7 +75,7 @@ public class GameService {
         return saved;
     }
 
-    private StoredGame requireGame(String gameId) {
+    private StoredGame requireGame(UUID gameId) {
         return repository.findById(gameId).orElseThrow(() -> new GameNotFoundException(gameId));
     }
 }

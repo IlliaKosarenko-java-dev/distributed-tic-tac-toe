@@ -14,24 +14,21 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.net.URI;
+import java.util.UUID;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Maps failures onto RFC-7807 responses.
- *
- * <p>Every response carries a machine-readable {@code code} alongside the status, because the
- * session service has to tell a permanent verdict (do not retry) from a transient one (safe to
- * retry), and 409 alone does not say which it is.
- *
  * <p>Extends {@link ResponseEntityExceptionHandler} so the framework's own exceptions — unknown
  * method, unsupported media type, unreadable body — keep their correct statuses instead of
  * being swallowed by the catch-all below. Boot's built-in problem-detail advice backs off in
@@ -41,7 +38,7 @@ import java.util.stream.Collectors;
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
-    private static final String ERROR_TYPE_BASE = "https://flamingo.example/errors/";
+    private static final String ERROR_TYPE_BASE = "https://flamingo/errors/";
 
     @ExceptionHandler(GameNotFoundException.class)
     public ProblemDetail handleGameNotFound(GameNotFoundException ex) {
@@ -115,13 +112,43 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatusCode status, WebRequest request) {
 
         InvalidFormatException badValue = findInvalidFormat(ex);
-        ProblemDetail problem = (badValue != null && badValue.getTargetType() != null
-                && Player.class.isAssignableFrom(badValue.getTargetType()))
-                ? problem(HttpStatus.BAD_REQUEST, "Invalid player",
-                        "'%s' is not a player; expected X or O".formatted(badValue.getValue()),
-                        "INVALID_PLAYER")
-                : problem(HttpStatus.BAD_REQUEST, "Malformed request",
-                        "Request body could not be parsed", "MALFORMED_REQUEST");
+        Class<?> target = badValue == null ? null : badValue.getTargetType();
+
+        ProblemDetail problem;
+        if (target != null && Player.class.isAssignableFrom(target)) {
+            problem = problem(HttpStatus.BAD_REQUEST, "Invalid player",
+                    "'%s' is not a player; expected X or O".formatted(badValue.getValue()),
+                    "INVALID_PLAYER");
+        } else if (target != null && UUID.class.isAssignableFrom(target)) {
+            problem = problem(HttpStatus.BAD_REQUEST, "Invalid identifier",
+                    "'%s' is not a valid UUID".formatted(badValue.getValue()), "INVALID_UUID");
+        } else {
+            problem = problem(HttpStatus.BAD_REQUEST, "Malformed request",
+                    "Request body could not be parsed", "MALFORMED_REQUEST");
+        }
+
+        return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
+    }
+
+    /**
+     * A path variable or query parameter that will not convert — most often an id that is not
+     * a UUID. Naming the offending value matters: the default response says only "400".
+     */
+    @Override
+    protected ResponseEntity<Object> handleTypeMismatch(
+            TypeMismatchException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+
+        String name = ex instanceof MethodArgumentTypeMismatchException mismatch
+                ? mismatch.getName() : "parameter";
+        boolean expectingUuid = ex.getRequiredType() != null
+                && UUID.class.isAssignableFrom(ex.getRequiredType());
+
+        ProblemDetail problem = problem(HttpStatus.BAD_REQUEST,
+                expectingUuid ? "Invalid identifier" : "Invalid parameter",
+                "%s '%s' is not %s".formatted(name, ex.getValue(),
+                        expectingUuid ? "a valid UUID" : "valid"),
+                expectingUuid ? "INVALID_UUID" : "INVALID_PARAMETER");
+        problem.setProperty("parameter", name);
 
         return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
     }
