@@ -12,7 +12,7 @@ import java.util.UUID;
 
 /**
  * @param board       nine cells in reading order; a free cell is null
- * @param nextPlayer  only meaningful while the status is IN_PROGRESS
+ * @param nextPlayer  whose turn it is, or null once the game has finished
  * @param version     concurrency token to echo back in the next move's expectedVersion
  * @param winningLine the three cells that ended the game, or null
  * @param lastMove    the move just applied; null when the state was merely read
@@ -36,7 +36,9 @@ public record GameStateResponse(
         return new GameStateResponse(
                 game.id(),
                 game.board().cells(),
-                game.nextPlayer(),
+                // Null once the game is over: a finished game has no next player, and echoing
+                // one invites a client to render "next: O" beside "X wins".
+                game.status().isTerminal() ? null : game.nextPlayer(),
                 game.status(),
                 game.moveCount(),
                 stored.version(),

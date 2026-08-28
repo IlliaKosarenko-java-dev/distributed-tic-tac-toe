@@ -86,10 +86,6 @@ public final class Board {
         return true;
     }
 
-    public int markCount() {
-        return CELL_COUNT - freePositions().size();
-    }
-
     /**
      * @return the completed line, or empty if nobody has three in a row. At most one line
      *         can be complete in a legally played game.

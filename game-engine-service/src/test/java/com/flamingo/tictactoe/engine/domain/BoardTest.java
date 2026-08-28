@@ -116,7 +116,6 @@ class BoardTest {
         void anEmptyBoardHasNineFreeCells() {
             assertThat(Board.empty().freePositions()).hasSize(9);
             assertThat(Board.empty().isFull()).isFalse();
-            assertThat(Board.empty().markCount()).isZero();
         }
 
         @Test
@@ -126,7 +125,6 @@ class BoardTest {
             assertThat(afterTwoMoves.freePositions())
                     .extracting(Position::index)
                     .containsExactly(2, 3, 4, 5, 6, 7, 8);
-            assertThat(afterTwoMoves.markCount()).isEqualTo(2);
         }
 
         @Test

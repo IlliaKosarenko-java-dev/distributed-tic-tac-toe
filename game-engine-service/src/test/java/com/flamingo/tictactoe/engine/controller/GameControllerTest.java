@@ -170,6 +170,7 @@ class GameControllerTest {
                                     {"player":"X","position":2}"""))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.status").value(GameStatus.X_WON.name()))
+                    .andExpect(jsonPath("$.nextPlayer").doesNotExist())
                     .andExpect(jsonPath("$.winningLine").isArray())
                     .andExpect(jsonPath("$.winningLine.length()").value(3));
         }
