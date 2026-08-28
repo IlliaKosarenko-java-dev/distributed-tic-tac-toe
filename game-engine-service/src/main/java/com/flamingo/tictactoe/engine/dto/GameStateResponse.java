@@ -8,6 +8,7 @@ import com.flamingo.tictactoe.engine.domain.GameStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @param board       nine cells in reading order; a free cell is null
@@ -17,7 +18,7 @@ import java.util.List;
  * @param lastMove    the move just applied; null when the state was merely read
  */
 public record GameStateResponse(
-        String gameId,
+        UUID gameId,
         List<Player> board,
         Player nextPlayer,
         GameStatus status,

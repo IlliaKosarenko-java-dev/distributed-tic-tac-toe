@@ -13,12 +13,8 @@ import org.springframework.stereotype.Repository;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 
-/**
- * MongoDB-backed store. Games outlive a restart here, and — unlike the in-memory adapter —
- * the concurrency guarantee holds across engine replicas, because both write operations below
- * are single-document and therefore atomic in MongoDB.
- */
 @Repository
 @Profile("mongo")
 public class MongoGameRepository implements GameRepository {
@@ -34,8 +30,8 @@ public class MongoGameRepository implements GameRepository {
     }
 
     @Override
-    public Optional<StoredGame> findById(String gameId) {
-        return documents.findById(gameId).map(mapper::toStoredGame);
+    public Optional<StoredGame> findById(UUID gameId) {
+        return documents.findById(gameId.toString()).map(mapper::toStoredGame);
     }
 
     @Override
@@ -54,8 +50,8 @@ public class MongoGameRepository implements GameRepository {
 
     @Override
     public StoredGame save(StoredGame game) {
-        String gameId = game.game().id();
-        Instant createdAt = documents.findById(gameId)
+        UUID gameId = game.game().id();
+        Instant createdAt = documents.findById(gameId.toString())
                 .map(GameDocument::createdAt)
                 .orElse(clock.instant());
 

@@ -9,6 +9,7 @@ import com.flamingo.tictactoe.engine.service.exception.ConcurrentGameUpdateExcep
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 public abstract class GameRepositoryContract {
 
-    protected static final String GAME_ID = "game-1";
+    protected static final UUID GAME_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
     protected abstract GameRepository repository();
 
@@ -43,7 +44,7 @@ public abstract class GameRepositoryContract {
 
     @Test
     void findingAnUnknownGameReturnsEmpty() {
-        assertThat(repository().findById("no-such-game")).isEmpty();
+        assertThat(repository().findById(UUID.randomUUID())).isEmpty();
     }
 
     @Test

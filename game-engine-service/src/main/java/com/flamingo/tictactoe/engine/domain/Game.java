@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.engine.domain;
 
+import java.util.UUID;
 
 import com.flamingo.tictactoe.engine.domain.exception.MoveRejectedException;
 
@@ -15,14 +16,14 @@ import java.util.Optional;
  */
 public final class Game {
 
-    private final String id;
+    private final UUID id;
     private final Board board;
     private final Player nextPlayer;
     private final GameStatus status;
     private final int moveCount;
     private final WinningLine winningLine;
 
-    private Game(String id, Board board, Player nextPlayer, GameStatus status,
+    private Game(UUID id, Board board, Player nextPlayer, GameStatus status,
                  int moveCount, WinningLine winningLine) {
         this.id = id;
         this.board = board;
@@ -32,7 +33,7 @@ public final class Game {
         this.winningLine = winningLine;
     }
 
-    public static Game newGame(String id, Player startingPlayer) {
+    public static Game newGame(UUID id, Player startingPlayer) {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(startingPlayer, "startingPlayer");
         return new Game(id, Board.empty(), startingPlayer, GameStatus.IN_PROGRESS, 0, null);
@@ -42,7 +43,7 @@ public final class Game {
      * Restores a game from stored state. Does not re-derive the status: a persisted game is
      * trusted, and re-running rules on load would hide corruption rather than surface it.
      */
-    public static Game restore(String id, Board board, Player nextPlayer, GameStatus status,
+    public static Game restore(UUID id, Board board, Player nextPlayer, GameStatus status,
                                int moveCount, WinningLine winningLine) {
         return new Game(id, board, nextPlayer, status, moveCount, winningLine);
     }
@@ -84,7 +85,7 @@ public final class Game {
         return new Game(id, updated, move.player().opponent(), nextStatus, moveCount + 1, line);
     }
 
-    public String id() {
+    public UUID id() {
         return id;
     }
 

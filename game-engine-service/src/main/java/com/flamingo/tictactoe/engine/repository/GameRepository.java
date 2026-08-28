@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.engine.repository;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.engine.service.exception.ConcurrentGameUpdateException;
 import com.flamingo.tictactoe.engine.domain.Game;
 
@@ -12,7 +13,7 @@ import java.util.Optional;
  */
 public interface GameRepository {
 
-    Optional<StoredGame> findById(String gameId);
+    Optional<StoredGame> findById(UUID gameId);
 
     /**
      * Stores the game only if no game with that id exists yet.

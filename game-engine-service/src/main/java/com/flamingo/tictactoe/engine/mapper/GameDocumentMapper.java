@@ -9,6 +9,7 @@ import com.flamingo.tictactoe.engine.domain.WinningLine;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * Translates between the {@link Game} aggregate and its stored form.
@@ -23,7 +24,7 @@ public class GameDocumentMapper {
     public GameDocument toDocument(Game game, Long version, Instant createdAt, Instant updatedAt) {
         WinningLine line = game.winningLine().orElse(null);
         return new GameDocument(
-                game.id(),
+                game.id().toString(),
                 game.board().cells(),
                 game.nextPlayer(),
                 game.status(),
@@ -37,7 +38,7 @@ public class GameDocumentMapper {
 
     public Game toDomain(GameDocument document) {
         return Game.restore(
-                document.id(),
+                UUID.fromString(document.id()),
                 Board.of(document.board().toArray(new Player[0])),
                 document.nextPlayer(),
                 document.status(),

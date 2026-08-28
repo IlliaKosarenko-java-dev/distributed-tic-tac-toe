@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.engine.mapper;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.engine.repository.StoredGame;
 import com.flamingo.tictactoe.engine.repository.mongo.GameDocument;
 import com.flamingo.tictactoe.engine.domain.Game;
@@ -19,10 +20,12 @@ class GameDocumentMapperTest {
     private static final Instant CREATED = Instant.parse("2026-01-01T10:00:00Z");
     private static final Instant UPDATED = Instant.parse("2026-01-01T10:05:00Z");
 
+    private static final UUID GAME_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
     private final GameDocumentMapper mapper = new GameDocumentMapper();
 
     private static Game gameAfter(int... cells) {
-        Game game = Game.newGame("game-1", Player.X);
+        Game game = Game.newGame(GAME_ID, Player.X);
         for (int cell : cells) {
             game = game.applyMove(Move.of(game.nextPlayer(), cell));
         }
@@ -33,7 +36,7 @@ class GameDocumentMapperTest {
     void carriesAnUnplayedGameOntoTheDocument() {
         GameDocument document = mapper.toDocument(gameAfter(), null, CREATED, CREATED);
 
-        assertThat(document.id()).isEqualTo("game-1");
+        assertThat(document.id()).isEqualTo(GAME_ID.toString());
         assertThat(document.board()).hasSize(9).containsOnlyNulls();
         assertThat(document.nextPlayer()).isEqualTo(Player.X);
         assertThat(document.status()).isEqualTo(GameStatus.IN_PROGRESS);

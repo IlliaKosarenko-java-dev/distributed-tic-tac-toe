@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.engine.repository.mongo;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.engine.mapper.GameDocumentMapper;
 import com.flamingo.tictactoe.engine.repository.GameRepository;
 import com.flamingo.tictactoe.engine.repository.GameRepositoryContract;
@@ -9,7 +10,6 @@ import com.flamingo.tictactoe.engine.domain.Game;
 import com.flamingo.tictactoe.engine.domain.GameStatus;
 import com.flamingo.tictactoe.engine.domain.Move;
 import com.flamingo.tictactoe.engine.domain.Player;
-import com.flamingo.tictactoe.engine.domain.Position;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +37,9 @@ class MongoGameRepositoryTest extends GameRepositoryContract {
     @ServiceConnection
     static final MongoDBContainer MONGO = new MongoDBContainer("mongo:7");
 
+    private static final UUID SECOND_GAME_ID =
+            UUID.fromString("22222222-2222-2222-2222-222222222222");
+
     @Autowired
     private MongoGameRepository repository;
 
@@ -56,7 +59,7 @@ class MongoGameRepositoryTest extends GameRepositoryContract {
     @Test
     void writesOneDocumentPerGame() {
         repository.createIfAbsent(Game.newGame(GAME_ID, Player.X));
-        repository.createIfAbsent(Game.newGame("game-2", Player.O));
+        repository.createIfAbsent(Game.newGame(SECOND_GAME_ID, Player.O));
 
         assertThat(documents.count()).isEqualTo(2);
     }
@@ -66,7 +69,7 @@ class MongoGameRepositoryTest extends GameRepositoryContract {
         StoredGame created = repository.createIfAbsent(Game.newGame(GAME_ID, Player.X)).orElseThrow();
         repository.save(created.withGame(created.game().applyMove(Move.of(Player.X, 0))));
 
-        assertThat(documents.findById(GAME_ID).orElseThrow().version())
+        assertThat(documents.findById(GAME_ID.toString()).orElseThrow().version())
                 .as("the concurrency token must live in the document, not in the JVM")
                 .isEqualTo(1L);
     }
@@ -74,11 +77,11 @@ class MongoGameRepositoryTest extends GameRepositoryContract {
     @Test
     void keepsTheOriginalCreationTimestampAcrossMoves() {
         StoredGame created = repository.createIfAbsent(Game.newGame(GAME_ID, Player.X)).orElseThrow();
-        var createdAt = documents.findById(GAME_ID).orElseThrow().createdAt();
+        var createdAt = documents.findById(GAME_ID.toString()).orElseThrow().createdAt();
 
         repository.save(created.withGame(created.game().applyMove(Move.of(Player.X, 0))));
 
-        assertThat(documents.findById(GAME_ID).orElseThrow().createdAt()).isEqualTo(createdAt);
+        assertThat(documents.findById(GAME_ID.toString()).orElseThrow().createdAt()).isEqualTo(createdAt);
     }
 
     @Test
@@ -88,13 +91,13 @@ class MongoGameRepositoryTest extends GameRepositoryContract {
             current = repository.save(current.withGame(
                     current.game().applyMove(Move.of(current.game().nextPlayer(), cell))));
         }
-        repository.createIfAbsent(Game.newGame("still-running", Player.X));
+        repository.createIfAbsent(Game.newGame(SECOND_GAME_ID, Player.X));
 
         assertThat(documents.findByStatus(GameStatus.X_WON))
                 .extracting(GameDocument::id)
-                .containsExactly(GAME_ID);
+                .containsExactly(GAME_ID.toString());
         assertThat(documents.findByStatus(GameStatus.IN_PROGRESS))
                 .extracting(GameDocument::id)
-                .containsExactly("still-running");
+                .containsExactly(SECOND_GAME_ID.toString());
     }
 }

@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.engine.service;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.engine.repository.inmemory.InMemoryGameRepository;
 import com.flamingo.tictactoe.engine.repository.StoredGame;
 import com.flamingo.tictactoe.engine.domain.GameStatus;
@@ -17,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class GameServiceTest {
 
-    private static final String GAME_ID = "game-1";
+    private static final UUID GAME_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
     private GameService service;
 
@@ -41,8 +42,10 @@ class GameServiceTest {
 
         @Test
         void generatesAnIdWhenNoneIsSupplied() {
-            assertThat(service.createGame(null, Player.X).game().game().id()).isNotBlank();
-            assertThat(service.createGame("  ", Player.X).game().game().id()).isNotBlank();
+            assertThat(service.createGame(null, Player.X).game().game().id()).isNotNull();
+            assertThat(service.createGame(null, Player.X).game().game().id())
+                    .as("each generated id must be distinct")
+                    .isNotEqualTo(service.createGame(null, Player.X).game().game().id());
         }
 
         @Test
@@ -71,7 +74,7 @@ class GameServiceTest {
 
         @Test
         void failsOnAnUnknownGame() {
-            assertThatThrownBy(() -> service.findGame("nope"))
+            assertThatThrownBy(() -> service.findGame(UUID.randomUUID()))
                     .isInstanceOf(GameNotFoundException.class);
         }
     }
@@ -120,7 +123,7 @@ class GameServiceTest {
 
         @Test
         void movingOnAnUnknownGameFails() {
-            assertThatThrownBy(() -> service.applyMove("nope", Move.of(Player.X, 0), null))
+            assertThatThrownBy(() -> service.applyMove(UUID.randomUUID(), Move.of(Player.X, 0), null))
                     .isInstanceOf(GameNotFoundException.class);
         }
 

@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.engine.controller;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.engine.dto.CreateGameRequest;
 import com.flamingo.tictactoe.engine.dto.GameStateResponse;
 import com.flamingo.tictactoe.engine.dto.MoveRequest;
@@ -59,7 +60,7 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "Current state"),
             @ApiResponse(responseCode = "404", description = "No such game")
     })
-    public GameStateResponse getGame(@PathVariable String gameId) {
+    public GameStateResponse getGame(@PathVariable UUID gameId) {
         return GameStateResponse.of(gameService.findGame(gameId));
     }
 
@@ -73,9 +74,7 @@ public class GameController {
             @ApiResponse(responseCode = "409", description = "Move is illegal in the current state, "
                     + "or the game changed since the caller read it")
     })
-    public GameStateResponse move(@PathVariable String gameId, @Valid @RequestBody MoveRequest request) {
-        // Bean validation has already bounded the position, so Position.of cannot fail here.
-        // It stays as the domain's own guard for any future non-HTTP caller.
+    public GameStateResponse move(@PathVariable UUID gameId, @Valid @RequestBody MoveRequest request) {
         Move move = new Move(request.player(), Position.of(request.position()));
 
         StoredGame updated = gameService.applyMove(gameId, move, request.expectedVersion());

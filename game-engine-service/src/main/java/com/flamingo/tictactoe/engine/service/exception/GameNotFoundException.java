@@ -1,15 +1,16 @@
 package com.flamingo.tictactoe.engine.service.exception;
 
+import java.util.UUID;
 public class GameNotFoundException extends RuntimeException {
 
-    private final String gameId;
+    private final UUID gameId;
 
-    public GameNotFoundException(String gameId) {
+    public GameNotFoundException(UUID gameId) {
         super("No game with id %s".formatted(gameId));
         this.gameId = gameId;
     }
 
-    public String gameId() {
+    public UUID gameId() {
         return gameId;
     }
 }
