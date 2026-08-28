@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.service;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.client.EngineStateMapper;
 import com.flamingo.tictactoe.session.client.GameEngineClient;
 import com.flamingo.tictactoe.session.client.GameEngineGateway;
@@ -122,7 +123,7 @@ class SimulationRunnerTest {
     private static String body(String board, String nextPlayer, String status,
                                int moveCount, long version, String winningLine) {
         return """
-                {"gameId":"g","board":[%s],"nextPlayer":"%s","status":"%s","moveCount":%d,
+                {"gameId":"11111111-1111-1111-1111-111111111111","board":[%s],"nextPlayer":"%s","status":"%s","moveCount":%d,
                  "version":%d,"winningLine":%s}
                 """.formatted(board, nextPlayer, status, moveCount, version, winningLine);
     }
@@ -176,7 +177,7 @@ class SimulationRunnerTest {
         void closesTheEventStreamWhenTheGameEnds() {
             stubGame(List.of("null,null,null,null,\"X\",null,null,null,null"), List.of("DRAW"));
 
-            String sessionId = createSession().session().sessionId();
+            UUID sessionId = createSession().session().sessionId();
             runner.runToCompletion(sessionId);
 
             assertThat(publisher.closedStreams())
@@ -227,7 +228,7 @@ class SimulationRunnerTest {
         void aFailureStillClosesTheEventStream() {
             engine.stubFor(post(urlPathEqualTo("/games")).willReturn(aResponse().withStatus(500)));
 
-            String sessionId = createSession().session().sessionId();
+            UUID sessionId = createSession().session().sessionId();
             runner.runToCompletion(sessionId);
 
             assertThat(publisher.closedStreams()).containsExactly(sessionId);
@@ -240,7 +241,7 @@ class SimulationRunnerTest {
         @Test
         void aSecondRunOnTheSameSessionIsRefused() {
             stubGame(List.of("null,null,null,null,\"X\",null,null,null,null"), List.of("DRAW"));
-            String sessionId = createSession().session().sessionId();
+            UUID sessionId = createSession().session().sessionId();
             runner.runToCompletion(sessionId);
 
             assertThatThrownBy(() -> runner.runToCompletion(sessionId))

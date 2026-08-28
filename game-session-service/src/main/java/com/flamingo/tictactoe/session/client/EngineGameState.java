@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.client;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.domain.BoardSnapshot;
 import com.flamingo.tictactoe.session.domain.GameOutcome;
 import com.flamingo.tictactoe.session.domain.Mark;
@@ -16,7 +17,7 @@ import java.util.List;
  * @param version echo back on the next move to detect a game that moved on underneath us
  */
 public record EngineGameState(
-        String gameId,
+        UUID gameId,
         BoardSnapshot board,
         Mark nextPlayer,
         GameOutcome outcome,

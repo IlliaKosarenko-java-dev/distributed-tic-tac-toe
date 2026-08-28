@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.client;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.client.exception.EngineRejectedException;
 import com.flamingo.tictactoe.session.client.exception.EngineUnavailableException;
 import com.flamingo.tictactoe.session.domain.GameOutcome;
@@ -40,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class GameEngineGatewayTest {
 
-    private static final String GAME_ID = "game-1";
+    private static final UUID GAME_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
     private static WireMockServer engine;
 
@@ -82,7 +83,7 @@ class GameEngineGatewayTest {
     private static String gameStateJson(String board, String nextPlayer, String status,
                                         int moveCount, long version) {
         return """
-                {"gameId":"game-1","board":[%s],"nextPlayer":"%s","status":"%s",
+                {"gameId":"11111111-1111-1111-1111-111111111111","board":[%s],"nextPlayer":"%s","status":"%s",
                  "moveCount":%d,"version":%d,"winningLine":null}
                 """.formatted(board, nextPlayer, status, moveCount, version);
     }
@@ -107,14 +108,14 @@ class GameEngineGatewayTest {
             assertThat(state.version()).isZero();
 
             engine.verify(1, WireMock.postRequestedFor(urlPathEqualTo("/games"))
-                    .withRequestBody(matchingJsonPath("$.gameId", equalTo(GAME_ID)))
+                    .withRequestBody(matchingJsonPath("$.gameId", equalTo(GAME_ID.toString())))
                     .withRequestBody(matchingJsonPath("$.startingPlayer", equalTo("X"))));
         }
 
         @Test
         @DisplayName("free cells arrive as null and stay free")
         void translatesABoardWithBothMarksAndFreeCells() {
-            engine.stubFor(post(urlPathEqualTo("/games/game-1/move")).willReturn(aResponse()
+            engine.stubFor(post(urlPathEqualTo("/games/" + GAME_ID + "/move")).willReturn(aResponse()
                     .withStatus(200)
                     .withHeader("Content-Type", "application/json")
                     .withBody(gameStateJson("\"X\",\"O\",null,null,\"X\",null,null,null,null",
@@ -131,7 +132,7 @@ class GameEngineGatewayTest {
 
         @Test
         void sendsTheExpectedVersionSoTheEngineCanDetectAStaleCaller() {
-            engine.stubFor(post(urlPathEqualTo("/games/game-1/move")).willReturn(aResponse()
+            engine.stubFor(post(urlPathEqualTo("/games/" + GAME_ID + "/move")).willReturn(aResponse()
                     .withStatus(200)
                     .withHeader("Content-Type", "application/json")
                     .withBody(gameStateJson("\"X\",null,null,null,null,null,null,null,null",
@@ -139,7 +140,7 @@ class GameEngineGatewayTest {
 
             gateway.applyMove(GAME_ID, Mark.X, 0, 0L);
 
-            engine.verify(WireMock.postRequestedFor(urlPathEqualTo("/games/game-1/move"))
+            engine.verify(WireMock.postRequestedFor(urlPathEqualTo("/games/" + GAME_ID + "/move"))
                     .withRequestBody(matchingJsonPath("$.player", equalTo("X")))
                     .withRequestBody(matchingJsonPath("$.position", equalTo("0")))
                     .withRequestBody(matchingJsonPath("$.expectedVersion", equalTo("0"))));
@@ -147,11 +148,11 @@ class GameEngineGatewayTest {
 
         @Test
         void readsAFinishedGameIncludingItsOutcome() {
-            engine.stubFor(get(urlPathEqualTo("/games/game-1")).willReturn(aResponse()
+            engine.stubFor(get(urlPathEqualTo("/games/" + GAME_ID)).willReturn(aResponse()
                     .withStatus(200)
                     .withHeader("Content-Type", "application/json")
                     .withBody("""
-                            {"gameId":"game-1","board":["X","X","X","O","O",null,null,null,null],
+                            {"gameId":"11111111-1111-1111-1111-111111111111","board":["X","X","X","O","O",null,null,null,null],
                              "nextPlayer":"O","status":"X_WON","moveCount":5,"version":5,
                              "winningLine":[0,1,2]}
                             """)));
@@ -165,11 +166,11 @@ class GameEngineGatewayTest {
 
         @Test
         void ignoresFieldsTheEngineAddsLater() {
-            engine.stubFor(get(urlPathEqualTo("/games/game-1")).willReturn(aResponse()
+            engine.stubFor(get(urlPathEqualTo("/games/" + GAME_ID)).willReturn(aResponse()
                     .withStatus(200)
                     .withHeader("Content-Type", "application/json")
                     .withBody("""
-                            {"gameId":"game-1","board":[null,null,null,null,null,null,null,null,null],
+                            {"gameId":"11111111-1111-1111-1111-111111111111","board":[null,null,null,null,null,null,null,null,null],
                              "nextPlayer":"X","status":"IN_PROGRESS","moveCount":0,"version":0,
                              "winningLine":null,"someFieldAddedNextYear":"whatever"}
                             """)));
@@ -183,7 +184,7 @@ class GameEngineGatewayTest {
 
         @Test
         void aRejectedMoveCarriesTheEnginesErrorCode() {
-            engine.stubFor(post(urlPathEqualTo("/games/game-1/move")).willReturn(aResponse()
+            engine.stubFor(post(urlPathEqualTo("/games/" + GAME_ID + "/move")).willReturn(aResponse()
                     .withStatus(409)
                     .withHeader("Content-Type", "application/problem+json")
                     .withBody("""
@@ -202,11 +203,11 @@ class GameEngineGatewayTest {
 
         @Test
         void anUnknownGameIsAlsoARefusalRatherThanAnOutage() {
-            engine.stubFor(get(urlPathEqualTo("/games/game-1")).willReturn(aResponse()
+            engine.stubFor(get(urlPathEqualTo("/games/" + GAME_ID)).willReturn(aResponse()
                     .withStatus(404)
                     .withHeader("Content-Type", "application/problem+json")
                     .withBody("""
-                            {"status":404,"code":"GAME_NOT_FOUND","detail":"No game with id game-1"}
+                            {"status":404,"code":"GAME_NOT_FOUND","detail":"No game with id 11111111-1111-1111-1111-111111111111"}
                             """)));
 
             assertThatThrownBy(() -> gateway.getGame(GAME_ID))
@@ -217,7 +218,7 @@ class GameEngineGatewayTest {
 
         @Test
         void copesWithARefusalThatHasNoProblemBody() {
-            engine.stubFor(post(urlPathEqualTo("/games/game-1/move"))
+            engine.stubFor(post(urlPathEqualTo("/games/" + GAME_ID + "/move"))
                     .willReturn(aResponse().withStatus(400).withBody("not json at all")));
 
             assertThatThrownBy(() -> gateway.applyMove(GAME_ID, Mark.X, 0, null))
@@ -241,7 +242,7 @@ class GameEngineGatewayTest {
 
         @Test
         void aReadTimeoutIsTreatedAsTransient() {
-            engine.stubFor(get(urlPathEqualTo("/games/game-1"))
+            engine.stubFor(get(urlPathEqualTo("/games/" + GAME_ID))
                     .willReturn(aResponse().withStatus(200).withFixedDelay(1500)));
 
             GameEngineGateway impatient = gatewayPointingAt(engine.baseUrl(), Duration.ofMillis(300));
@@ -266,7 +267,7 @@ class GameEngineGatewayTest {
 
         @Test
         void anUnknownStatusValueFailsClearlyInsteadOfDeepInASimulation() {
-            engine.stubFor(get(urlPathEqualTo("/games/game-1")).willReturn(aResponse()
+            engine.stubFor(get(urlPathEqualTo("/games/" + GAME_ID)).willReturn(aResponse()
                     .withStatus(200)
                     .withHeader("Content-Type", "application/json")
                     .withBody(gameStateJson("null,null,null,null,null,null,null,null,null",
@@ -279,7 +280,7 @@ class GameEngineGatewayTest {
 
         @Test
         void aBoardOfTheWrongSizeIsRejected() {
-            engine.stubFor(get(urlPathEqualTo("/games/game-1")).willReturn(aResponse()
+            engine.stubFor(get(urlPathEqualTo("/games/" + GAME_ID)).willReturn(aResponse()
                     .withStatus(200)
                     .withHeader("Content-Type", "application/json")
                     .withBody(gameStateJson("null,null,null", "X", "IN_PROGRESS", 0, 0))));

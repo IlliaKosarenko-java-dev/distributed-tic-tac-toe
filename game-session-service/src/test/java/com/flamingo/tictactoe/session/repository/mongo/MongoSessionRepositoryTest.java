@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.repository.mongo;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.config.SessionConfiguration;
 import com.flamingo.tictactoe.session.domain.GameOutcome;
 import com.flamingo.tictactoe.session.domain.Mark;
@@ -33,6 +34,8 @@ class MongoSessionRepositoryTest extends SessionRepositoryContract {
     @ServiceConnection
     static final MongoDBContainer MONGO = new MongoDBContainer("mongo:7");
 
+    private static final UUID SECOND_SESSION_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
+
     @Autowired
     private MongoSessionRepository repository;
 
@@ -56,7 +59,7 @@ class MongoSessionRepositoryTest extends SessionRepositoryContract {
         repository.save(stored.withSession(stored.session().withMove(
                 new MoveRecord(1, Mark.X, 4, NOW), board("....X...."), GameOutcome.IN_PROGRESS)));
 
-        SessionDocument document = documents.findById(SESSION_ID).orElseThrow();
+        SessionDocument document = documents.findById(SESSION_ID.toString()).orElseThrow();
 
         assertThat(documents.count())
                 .as("history is embedded, not a second collection")
@@ -74,7 +77,7 @@ class MongoSessionRepositoryTest extends SessionRepositoryContract {
 
         StoredSession claimed = repository.claimForSimulation(SESSION_ID, "instance-a", NOW).orElseThrow();
 
-        assertThat(documents.findById(SESSION_ID).orElseThrow().version())
+        assertThat(documents.findById(SESSION_ID.toString()).orElseThrow().version())
                 .as("findAndModify bypasses @Version, so the claim must bump it itself")
                 .isEqualTo(claimed.version());
 
@@ -93,16 +96,16 @@ class MongoSessionRepositoryTest extends SessionRepositoryContract {
         repository.save(finished.withSession(finished.session().finished(NOW)));
 
         repository.create(com.flamingo.tictactoe.session.domain.Session.create(
-                "session-2", "session-2",
+                SECOND_SESSION_ID, SECOND_SESSION_ID,
                 com.flamingo.tictactoe.session.domain.StrategyType.RANDOM,
                 com.flamingo.tictactoe.session.domain.StrategyType.RANDOM, 0, NOW));
 
         assertThat(documents.findByStatus(SessionStatus.FINISHED))
-                .extracting(SessionDocument::id).containsExactly(SESSION_ID);
+                .extracting(SessionDocument::id).containsExactly(SESSION_ID.toString());
         assertThat(documents.findByGameOutcome(GameOutcome.X_WON))
-                .extracting(SessionDocument::id).containsExactly(SESSION_ID);
+                .extracting(SessionDocument::id).containsExactly(SESSION_ID.toString());
         assertThat(documents.findByStatus(SessionStatus.CREATED))
-                .extracting(SessionDocument::id).containsExactly("session-2");
+                .extracting(SessionDocument::id).containsExactly(SECOND_SESSION_ID.toString());
     }
 
     @Test

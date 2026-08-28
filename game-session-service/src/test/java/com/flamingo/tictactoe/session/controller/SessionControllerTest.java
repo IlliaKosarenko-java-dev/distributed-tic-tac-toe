@@ -25,6 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.util.UUID;
 import java.util.List;
 
 import static com.flamingo.tictactoe.session.domain.BoardFixtures.board;
@@ -45,7 +46,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(SessionController.class)
 class SessionControllerTest {
 
-    private static final String SESSION_ID = "session-1";
+    private static final UUID SESSION_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    private static final UUID UNKNOWN_SESSION_ID = UUID.fromString("99999999-9999-9999-9999-999999999999");
     private static final Instant NOW = Instant.parse("2026-01-01T10:00:00Z");
 
     @Autowired
@@ -88,8 +90,8 @@ class SessionControllerTest {
                             .content("""
                                     {"xStrategy":"RULE_BASED","oStrategy":"RANDOM","moveDelayMs":400}"""))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.sessionId").value(SESSION_ID))
-                    .andExpect(jsonPath("$.gameId").value(SESSION_ID))
+                    .andExpect(jsonPath("$.sessionId").value(SESSION_ID.toString()))
+                    .andExpect(jsonPath("$.gameId").value(SESSION_ID.toString()))
                     .andExpect(jsonPath("$.status").value("CREATED"))
                     .andExpect(jsonPath("$.board.length()").value(9))
                     .andExpect(jsonPath("$.board[0]").doesNotExist())
@@ -172,9 +174,10 @@ class SessionControllerTest {
 
         @Test
         void returns404ForAnUnknownSession() throws Exception {
-            willThrow(new SessionNotFoundException("nope")).given(runner).startAsync("nope");
+            willThrow(new SessionNotFoundException(UNKNOWN_SESSION_ID))
+                    .given(runner).startAsync(UNKNOWN_SESSION_ID);
 
-            mockMvc.perform(post("/sessions/{id}/simulate", "nope"))
+            mockMvc.perform(post("/sessions/{id}/simulate", UNKNOWN_SESSION_ID))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value("SESSION_NOT_FOUND"));
         }
@@ -247,9 +250,10 @@ class SessionControllerTest {
 
         @Test
         void returns404ForAnUnknownSession() throws Exception {
-            given(sessionService.findSession("nope")).willThrow(new SessionNotFoundException("nope"));
+            given(sessionService.findSession(UNKNOWN_SESSION_ID))
+                    .willThrow(new SessionNotFoundException(UNKNOWN_SESSION_ID));
 
-            mockMvc.perform(get("/sessions/{id}", "nope"))
+            mockMvc.perform(get("/sessions/{id}", UNKNOWN_SESSION_ID))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value("SESSION_NOT_FOUND"));
         }
@@ -303,13 +307,24 @@ class SessionControllerTest {
         }
 
         @Test
-        void doesNotOpenAStreamForAnUnknownSession() throws Exception {
-            given(sessionService.findSession("nope")).willThrow(new SessionNotFoundException("nope"));
+        void rejectsAnIdThatIsNotAUuidBeforeTouchingTheService() throws Exception {
+            mockMvc.perform(get("/sessions/{id}", "not-a-uuid"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INVALID_UUID"))
+                    .andExpect(jsonPath("$.parameter").value("sessionId"));
 
-            mockMvc.perform(get("/sessions/{id}/events", "nope"))
+            verify(sessionService, never()).findSession(any());
+        }
+
+        @Test
+        void doesNotOpenAStreamForAnUnknownSession() throws Exception {
+            given(sessionService.findSession(UNKNOWN_SESSION_ID))
+                    .willThrow(new SessionNotFoundException(UNKNOWN_SESSION_ID));
+
+            mockMvc.perform(get("/sessions/{id}/events", UNKNOWN_SESSION_ID))
                     .andExpect(status().isNotFound());
 
-            verify(emitters, never()).subscribe(eq("nope"));
+            verify(emitters, never()).subscribe(eq(UNKNOWN_SESSION_ID));
         }
     }
 }

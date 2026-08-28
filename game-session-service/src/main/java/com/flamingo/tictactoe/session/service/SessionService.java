@@ -48,7 +48,7 @@ public class SessionService {
      * identifier and neither needs a lookup table to find the other.
      */
     public StoredSession createSession(StrategyType xStrategy, StrategyType oStrategy, long moveDelayMs) {
-        String sessionId = UUID.randomUUID().toString();
+        UUID sessionId = UUID.randomUUID();
         Session session = Session.create(sessionId, sessionId, xStrategy, oStrategy,
                 moveDelayMs, clock.instant());
 
@@ -62,7 +62,7 @@ public class SessionService {
         return repository.search(query);
     }
 
-    public StoredSession findSession(String sessionId) {
+    public StoredSession findSession(UUID sessionId) {
         return repository.findById(sessionId)
                 .orElseThrow(() -> new SessionNotFoundException(sessionId));
     }
@@ -72,7 +72,7 @@ public class SessionService {
      *
      * @throws SimulationAlreadyStartedException if another caller already claimed it
      */
-    public StoredSession claimForSimulation(String sessionId) {
+    public StoredSession claimForSimulation(UUID sessionId) {
         StoredSession existing = findSession(sessionId);
 
         return repository.claimForSimulation(sessionId, instance.id(), clock.instant())

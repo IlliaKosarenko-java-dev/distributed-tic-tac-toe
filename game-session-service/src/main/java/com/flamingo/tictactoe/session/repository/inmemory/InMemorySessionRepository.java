@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,10 +28,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @Profile("in-memory")
 public class InMemorySessionRepository implements SessionRepository {
 
-    private final Map<String, StoredSession> sessions = new ConcurrentHashMap<>();
+    private final Map<UUID, StoredSession> sessions = new ConcurrentHashMap<>();
 
     @Override
-    public Optional<StoredSession> findById(String sessionId) {
+    public Optional<StoredSession> findById(UUID sessionId) {
         return Optional.ofNullable(sessions.get(sessionId));
     }
 
@@ -45,7 +46,7 @@ public class InMemorySessionRepository implements SessionRepository {
     }
 
     @Override
-    public Optional<StoredSession> claimForSimulation(String sessionId, String owner, Instant startedAt) {
+    public Optional<StoredSession> claimForSimulation(UUID sessionId, String owner, Instant startedAt) {
         // Only the caller whose mapping function observes CREATED records a result, so the
         // status check and the transition cannot be split by another thread.
         StoredSession[] claimed = new StoredSession[1];
@@ -62,7 +63,7 @@ public class InMemorySessionRepository implements SessionRepository {
 
     @Override
     public StoredSession save(StoredSession session) {
-        String sessionId = session.session().sessionId();
+        UUID sessionId = session.session().sessionId();
 
         StoredSession[] written = new StoredSession[1];
         sessions.computeIfPresent(sessionId, (id, current) -> {

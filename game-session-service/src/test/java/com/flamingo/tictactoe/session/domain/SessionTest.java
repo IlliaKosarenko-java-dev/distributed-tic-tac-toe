@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.domain;
 
+import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -10,11 +11,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class SessionTest {
 
+    private static final UUID SESSION_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final Instant NOW = Instant.parse("2026-01-01T10:00:00Z");
     private static final Instant LATER = Instant.parse("2026-01-01T10:00:30Z");
 
     private static Session session() {
-        return Session.create("s1", "s1", StrategyType.RULE_BASED, StrategyType.RANDOM, 250, NOW);
+        return Session.create(SESSION_ID, SESSION_ID, StrategyType.RULE_BASED,
+                StrategyType.RANDOM, 250, NOW);
     }
 
     @Nested

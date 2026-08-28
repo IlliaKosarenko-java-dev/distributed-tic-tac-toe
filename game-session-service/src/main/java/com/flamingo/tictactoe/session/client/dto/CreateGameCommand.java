@@ -1,4 +1,6 @@
 package com.flamingo.tictactoe.session.client.dto;
 
-public record CreateGameCommand(String gameId, String startingPlayer) {
+import java.util.UUID;
+
+public record CreateGameCommand(UUID gameId, String startingPlayer) {
 }

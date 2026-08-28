@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.service;
 
+import java.util.UUID;
 /**
  * Where simulation progress goes.
  *
@@ -13,5 +14,5 @@ public interface SessionEventPublisher {
     void publish(SessionEvent event);
 
     /** No watcher will receive anything further for this session. */
-    void closeStream(String sessionId);
+    void closeStream(UUID sessionId);
 }

@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.client;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.client.dto.EngineGameStateResponse;
 import com.flamingo.tictactoe.session.client.exception.EngineUnavailableException;
 import com.flamingo.tictactoe.session.domain.BoardSnapshot;
@@ -24,7 +25,7 @@ public class EngineStateMapper {
             throw new EngineUnavailableException("Engine returned an empty body");
         }
         return new EngineGameState(
-                response.gameId(),
+                toGameId(response.gameId()),
                 toBoard(response.board()),
                 toMark(response.nextPlayer(), "nextPlayer"),
                 toOutcome(response.status()),
@@ -33,12 +34,22 @@ public class EngineStateMapper {
                 response.winningLine() == null ? List.of() : List.copyOf(response.winningLine()));
     }
 
+    /** The engine speaks JSON, so its id arrives as text and is parsed here, once. */
+    private UUID toGameId(String value) {
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException | NullPointerException malformed) {
+            throw new EngineUnavailableException(
+                    "Engine reported gameId='%s', which is not a UUID".formatted(value));
+        }
+    }
+
     private BoardSnapshot toBoard(List<String> cells) {
         if (cells == null || cells.size() != BoardSnapshot.CELL_COUNT) {
             throw new EngineUnavailableException(
                     "Engine returned a board of %s cells".formatted(cells == null ? "null" : cells.size()));
         }
-        return BoardSnapshot.of(cells.stream().map(cell -> toMarkOrNull(cell)).toList());
+        return BoardSnapshot.of(cells.stream().map(this::toMarkOrNull).toList());
     }
 
     /** A free cell is null on the wire and stays null here. */

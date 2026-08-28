@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.domain;
 
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.With;
@@ -26,8 +27,8 @@ import java.util.Optional;
 @With(AccessLevel.PRIVATE)
 public final class Session {
 
-    private final String sessionId;
-    private final String gameId;
+    private final UUID sessionId;
+    private final UUID gameId;
     private final SessionStatus status;
     private final StrategyType xStrategy;
     private final StrategyType oStrategy;
@@ -46,7 +47,7 @@ public final class Session {
      * is what makes instances genuinely immutable, and a generated constructor would assign the
      * caller's list straight through.
      */
-    private Session(String sessionId, String gameId, SessionStatus status,
+    private Session(UUID sessionId, UUID gameId, SessionStatus status,
                     StrategyType xStrategy, StrategyType oStrategy, long moveDelayMs,
                     BoardSnapshot board, GameOutcome gameOutcome, List<MoveRecord> moves,
                     String simulationOwner, Instant createdAt, Instant startedAt,
@@ -67,7 +68,7 @@ public final class Session {
         this.failureReason = failureReason;
     }
 
-    public static Session create(String sessionId, String gameId, StrategyType xStrategy,
+    public static Session create(UUID sessionId, UUID gameId, StrategyType xStrategy,
                                  StrategyType oStrategy, long moveDelayMs, Instant createdAt) {
         Objects.requireNonNull(sessionId, "sessionId");
         Objects.requireNonNull(gameId, "gameId");
@@ -77,7 +78,7 @@ public final class Session {
     }
 
     /** Rebuilds a session from stored state without re-deriving anything. */
-    public static Session restore(String sessionId, String gameId, SessionStatus status,
+    public static Session restore(UUID sessionId, UUID gameId, SessionStatus status,
                                   StrategyType xStrategy, StrategyType oStrategy, long moveDelayMs,
                                   BoardSnapshot board, GameOutcome gameOutcome, List<MoveRecord> moves,
                                   String simulationOwner, Instant createdAt, Instant startedAt,

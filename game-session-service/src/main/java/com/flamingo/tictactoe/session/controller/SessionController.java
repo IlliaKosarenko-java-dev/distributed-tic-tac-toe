@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.controller;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.domain.GameOutcome;
 import com.flamingo.tictactoe.session.domain.SessionStatus;
 import com.flamingo.tictactoe.session.domain.StrategyType;
@@ -73,7 +74,7 @@ public class SessionController {
             @ApiResponse(responseCode = "409", description = "Already claimed by a runner")
     })
     public ResponseEntity<SessionResponse> simulate(
-            @PathVariable String sessionId,
+            @PathVariable UUID sessionId,
             @RequestParam(defaultValue = "async") String mode) {
 
         // Parsed rather than bound directly to the enum: Spring's String-to-enum conversion is
@@ -86,7 +87,7 @@ public class SessionController {
 
     @GetMapping("/{sessionId}")
     @Operation(summary = "Read a session, its board and its full move history")
-    public SessionResponse get(@PathVariable String sessionId) {
+    public SessionResponse get(@PathVariable UUID sessionId) {
         return SessionResponse.of(sessionService.findSession(sessionId));
     }
 
@@ -115,7 +116,7 @@ public class SessionController {
     @GetMapping(value = "/{sessionId}/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "Subscribe to a session's progress",
             description = "Events: snapshot, status, move, finished, error")
-    public SseEmitter events(@PathVariable String sessionId) {
+    public SseEmitter events(@PathVariable UUID sessionId) {
         StoredSession stored = sessionService.findSession(sessionId);
 
         SseEmitter emitter = emitters.subscribe(sessionId);

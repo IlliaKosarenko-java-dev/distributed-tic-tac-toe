@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.repository;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.domain.GameOutcome;
 import com.flamingo.tictactoe.session.domain.Mark;
 import com.flamingo.tictactoe.session.domain.MoveRecord;
@@ -24,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /** Behaviour every {@link SessionRepository} must provide, run against each adapter. */
 public abstract class SessionRepositoryContract {
 
-    protected static final String SESSION_ID = "session-1";
+    protected static final UUID SESSION_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     protected static final Instant NOW = Instant.parse("2026-01-01T10:00:00Z");
 
     protected abstract SessionRepository repository();
@@ -52,7 +53,7 @@ public abstract class SessionRepositoryContract {
 
     @Test
     void findingAnUnknownSessionReturnsEmpty() {
-        assertThat(repository().findById("no-such-session")).isEmpty();
+        assertThat(repository().findById(UUID.randomUUID())).isEmpty();
     }
 
     @Test
@@ -84,7 +85,7 @@ public abstract class SessionRepositoryContract {
 
     @Test
     void claimingAnUnknownSessionReturnsEmpty() {
-        assertThat(repository().claimForSimulation("no-such-session", "instance-a", NOW)).isEmpty();
+        assertThat(repository().claimForSimulation(UUID.randomUUID(), "instance-a", NOW)).isEmpty();
     }
 
     @Test

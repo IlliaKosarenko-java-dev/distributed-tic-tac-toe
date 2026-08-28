@@ -20,6 +20,7 @@ import org.springframework.stereotype.Repository;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import java.util.Optional;
 
 @Repository
@@ -40,8 +41,8 @@ public class MongoSessionRepository implements SessionRepository {
     }
 
     @Override
-    public Optional<StoredSession> findById(String sessionId) {
-        return documents.findById(sessionId).map(mapper::toStoredSession);
+    public Optional<StoredSession> findById(UUID sessionId) {
+        return documents.findById(sessionId.toString()).map(mapper::toStoredSession);
     }
 
     @Override
@@ -55,8 +56,8 @@ public class MongoSessionRepository implements SessionRepository {
      * caller to slip into.
      */
     @Override
-    public Optional<StoredSession> claimForSimulation(String sessionId, String owner, Instant startedAt) {
-        Query onlyIfUnclaimed = Query.query(Criteria.where("_id").is(sessionId)
+    public Optional<StoredSession> claimForSimulation(UUID sessionId, String owner, Instant startedAt) {
+        Query onlyIfUnclaimed = Query.query(Criteria.where("_id").is(sessionId.toString())
                 .and("status").is(SessionStatus.CREATED));
 
         Update claim = new Update()
@@ -76,7 +77,7 @@ public class MongoSessionRepository implements SessionRepository {
 
     @Override
     public StoredSession save(StoredSession session) {
-        String sessionId = session.session().sessionId();
+        UUID sessionId = session.session().sessionId();
         try {
             return mapper.toStoredSession(
                     documents.save(mapper.toDocument(session.session(), session.version())));
@@ -112,9 +113,5 @@ public class MongoSessionRepository implements SessionRepository {
         return mongoTemplate.find(mongoQuery, SessionDocument.class).stream()
                 .map(mapper::toStoredSession)
                 .toList();
-    }
-
-    Instant now() {
-        return clock.instant();
     }
 }

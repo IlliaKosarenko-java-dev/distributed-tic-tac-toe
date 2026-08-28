@@ -1,18 +1,19 @@
 package com.flamingo.tictactoe.session.service.exception;
 
+import java.util.UUID;
 public class ConcurrentSessionUpdateException extends RuntimeException {
 
-    private final String sessionId;
+    private final UUID sessionId;
     private final long expectedVersion;
 
-    public ConcurrentSessionUpdateException(String sessionId, long expectedVersion) {
+    public ConcurrentSessionUpdateException(UUID sessionId, long expectedVersion) {
         super("Session %s was modified concurrently; expected version %d"
                 .formatted(sessionId, expectedVersion));
         this.sessionId = sessionId;
         this.expectedVersion = expectedVersion;
     }
 
-    public String sessionId() {
+    public UUID sessionId() {
         return sessionId;
     }
 

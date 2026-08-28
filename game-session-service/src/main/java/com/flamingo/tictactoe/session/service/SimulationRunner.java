@@ -1,5 +1,6 @@
 package com.flamingo.tictactoe.session.service;
 
+import java.util.UUID;
 import com.flamingo.tictactoe.session.client.EngineGameState;
 import com.flamingo.tictactoe.session.client.GameEngineGateway;
 import com.flamingo.tictactoe.session.client.exception.EngineException;
@@ -51,7 +52,7 @@ public class SimulationRunner {
      * <p>The claim happens on the caller's thread on purpose: a caller that has lost the race
      * should be told so in its own response, not discover it in a log line later.
      */
-    public StoredSession startAsync(String sessionId) {
+    public StoredSession startAsync(UUID sessionId) {
         StoredSession claimed = sessionService.claimForSimulation(sessionId);
         events.publish(new SessionEvent.StatusChanged(sessionId, claimed.session().status()));
         executor.execute(() -> play(claimed, true));
@@ -64,13 +65,13 @@ public class SimulationRunner {
      * <p>Exists for tests: waiting out nine real delays and polling for completion makes for a
      * slow test and a flaky one.
      */
-    public StoredSession runToCompletion(String sessionId) {
+    public StoredSession runToCompletion(UUID sessionId) {
         StoredSession claimed = sessionService.claimForSimulation(sessionId);
         return play(claimed, false);
     }
 
     private StoredSession play(StoredSession claimed, boolean pauseBetweenMoves) {
-        String sessionId = claimed.session().sessionId();
+        UUID sessionId = claimed.session().sessionId();
         StoredSession current = claimed;
 
         try {

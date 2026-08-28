@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -33,9 +34,9 @@ public class SseEmitterRegistry implements SessionEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(SseEmitterRegistry.class);
 
-    private final Map<String, List<SseEmitter>> subscribers = new ConcurrentHashMap<>();
+    private final Map<UUID, List<SseEmitter>> subscribers = new ConcurrentHashMap<>();
 
-    public SseEmitter subscribe(String sessionId) {
+    public SseEmitter subscribe(UUID sessionId) {
         SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT.toMillis());
 
         subscribers.computeIfAbsent(sessionId, id -> new CopyOnWriteArrayList<>()).add(emitter);
@@ -68,7 +69,7 @@ public class SseEmitterRegistry implements SessionEventPublisher {
     }
 
     @Override
-    public void closeStream(String sessionId) {
+    public void closeStream(UUID sessionId) {
         List<SseEmitter> emitters = subscribers.remove(sessionId);
         if (emitters == null) {
             return;
@@ -82,11 +83,11 @@ public class SseEmitterRegistry implements SessionEventPublisher {
         }
     }
 
-    int countFor(String sessionId) {
+    int countFor(UUID sessionId) {
         return subscribers.getOrDefault(sessionId, List.of()).size();
     }
 
-    private void remove(String sessionId, SseEmitter emitter) {
+    private void remove(UUID sessionId, SseEmitter emitter) {
         List<SseEmitter> emitters = subscribers.get(sessionId);
         if (emitters == null) {
             return;
