@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.flamingo.tictactoe.engine.service.exception.ConcurrentGameUpdateException;
 import com.flamingo.tictactoe.engine.service.exception.GameNotFoundException;
 import com.flamingo.tictactoe.engine.domain.Player;
+import com.flamingo.tictactoe.engine.repository.mongo.CorruptGameDocumentException;
 import com.flamingo.tictactoe.engine.domain.exception.InvalidPositionException;
 import com.flamingo.tictactoe.engine.domain.exception.MoveRejectedException;
 import org.slf4j.Logger;
@@ -38,6 +39,8 @@ import java.util.stream.Collectors;
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
+    /** Cycle-proof bound for the cause-chain walk below. */
+    private static final int MAX_CAUSE_DEPTH = 10;
     private static final String ERROR_TYPE_BASE = "https://flamingo/errors/";
 
     @ExceptionHandler(GameNotFoundException.class)
@@ -153,6 +156,19 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
     }
 
+    /**
+     * Stored data that will not map back. Still a 500 — the caller did nothing wrong — but the
+     * code and game id make it findable instead of anonymous.
+     */
+    @ExceptionHandler(CorruptGameDocumentException.class)
+    public ProblemDetail handleCorruptDocument(CorruptGameDocumentException ex) {
+        log.error("Corrupt game document", ex);
+        ProblemDetail problem = problem(HttpStatus.INTERNAL_SERVER_ERROR, "Corrupt game data",
+                "The stored game could not be read", "CORRUPT_GAME_DOCUMENT");
+        problem.setProperty("gameId", ex.gameId());
+        return problem;
+    }
+
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpected(Exception ex) {
         // Logged at error with the stack trace; the response deliberately says no more than
@@ -164,13 +180,12 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     /** Jackson may nest the offending value a few frames down, so walk the cause chain. */
     private static InvalidFormatException findInvalidFormat(Throwable throwable) {
-        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
+        Throwable cause = throwable;
+        for (int depth = 0; cause != null && depth < MAX_CAUSE_DEPTH; depth++) {
             if (cause instanceof InvalidFormatException invalidFormat) {
                 return invalidFormat;
             }
-            if (cause.getCause() == cause) {
-                break;
-            }
+            cause = cause.getCause();
         }
         return null;
     }

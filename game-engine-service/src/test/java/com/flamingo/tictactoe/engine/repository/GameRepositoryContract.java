@@ -6,6 +6,7 @@ import com.flamingo.tictactoe.engine.domain.Move;
 import com.flamingo.tictactoe.engine.domain.Player;
 import com.flamingo.tictactoe.engine.domain.Position;
 import com.flamingo.tictactoe.engine.service.exception.ConcurrentGameUpdateException;
+import com.flamingo.tictactoe.engine.service.exception.GameNotFoundException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

@@ -2,6 +2,7 @@ package com.flamingo.tictactoe.engine.mapper;
 
 import java.util.UUID;
 import com.flamingo.tictactoe.engine.repository.StoredGame;
+import com.flamingo.tictactoe.engine.repository.mongo.CorruptGameDocumentException;
 import com.flamingo.tictactoe.engine.repository.mongo.GameDocument;
 import com.flamingo.tictactoe.engine.domain.Game;
 import com.flamingo.tictactoe.engine.domain.GameStatus;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 
 class GameDocumentMapperTest {
@@ -97,6 +99,28 @@ class GameDocumentMapperTest {
         assertThat(restored.status()).isEqualTo(GameStatus.DRAW);
         assertThat(restored.board().isFull()).isTrue();
         assertThat(restored.winningLine()).isEmpty();
+    }
+
+    @Test
+    void refusesADocumentWithNoBoardInsteadOfThrowingANullPointer() {
+        GameDocument noBoard = new GameDocument(GAME_ID.toString(), null, Player.X,
+                GameStatus.IN_PROGRESS, 0, null, null, 0L, CREATED, CREATED);
+
+        assertThatThrownBy(() -> mapper.toDomain(noBoard))
+                .isInstanceOf(CorruptGameDocumentException.class)
+                .hasMessageContaining(GAME_ID.toString())
+                .hasMessageContaining("no board");
+    }
+
+    @Test
+    void refusesABoardThatIsNotNineCells() {
+        GameDocument shortBoard = new GameDocument(GAME_ID.toString(),
+                java.util.List.of(Player.X, Player.O), Player.X,
+                GameStatus.IN_PROGRESS, 2, null, null, 0L, CREATED, CREATED);
+
+        assertThatThrownBy(() -> mapper.toDomain(shortBoard))
+                .isInstanceOf(CorruptGameDocumentException.class)
+                .hasMessageContaining("2 cells");
     }
 
     @Test

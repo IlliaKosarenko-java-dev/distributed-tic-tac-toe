@@ -8,7 +8,10 @@ import com.flamingo.tictactoe.engine.domain.Player;
 import com.flamingo.tictactoe.engine.domain.WinningLine;
 import org.springframework.stereotype.Component;
 
+import com.flamingo.tictactoe.engine.repository.mongo.CorruptGameDocumentException;
+
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -39,13 +42,25 @@ public class GameDocumentMapper {
     public Game toDomain(GameDocument document) {
         return Game.restore(
                 UUID.fromString(document.id()),
-                Board.of(document.board().toArray(new Player[0])),
+                boardOf(document),
                 document.nextPlayer(),
                 document.status(),
                 document.moveCount(),
                 document.winningLine() == null
                         ? null
                         : new WinningLine(document.winner(), document.winningLine()));
+    }
+
+    private Board boardOf(GameDocument document) {
+        List<Player> cells = document.board();
+        if (cells == null) {
+            throw new CorruptGameDocumentException(document.id(), "it has no board");
+        }
+        if (cells.size() != Board.CELL_COUNT) {
+            throw new CorruptGameDocumentException(document.id(),
+                    "its board has %d cells, expected %d".formatted(cells.size(), Board.CELL_COUNT));
+        }
+        return Board.of(cells.toArray(new Player[0]));
     }
 
     /** A version of null means the document has not been through an insert yet. */

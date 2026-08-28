@@ -3,6 +3,7 @@ package com.flamingo.tictactoe.engine.repository.inmemory;
 import com.flamingo.tictactoe.engine.repository.GameRepository;
 import com.flamingo.tictactoe.engine.repository.StoredGame;
 import com.flamingo.tictactoe.engine.service.exception.ConcurrentGameUpdateException;
+import com.flamingo.tictactoe.engine.service.exception.GameNotFoundException;
 import com.flamingo.tictactoe.engine.domain.Game;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
@@ -38,10 +39,13 @@ public class InMemoryGameRepository implements GameRepository {
     public StoredGame save(StoredGame game) {
         UUID gameId = game.game().id();
 
-        // Only the mapping function that actually wins the compare-and-swap records a
-        // result, so a losing writer cannot be mistaken for a winner by comparing versions.
+        // Only the mapping function that actually wins the compare-and-swap records a result,
+        // so a losing writer cannot be mistaken for a winner by comparing versions. The
+        // `present` flag separates the two ways of losing: the game moved on, or it is gone.
         StoredGame[] written = new StoredGame[1];
+        boolean[] present = new boolean[1];
         games.computeIfPresent(gameId, (id, current) -> {
+            present[0] = true;
             if (current.version() != game.version()) {
                 return current; // someone else moved first; leave their state alone
             }
@@ -49,9 +53,13 @@ public class InMemoryGameRepository implements GameRepository {
             return written[0];
         });
 
-        if (written[0] == null) {
-            throw new ConcurrentGameUpdateException(gameId, game.version());
+        if (written[0] != null) {
+            return written[0];
         }
-        return written[0];
+        if (!present[0]) {
+            // Telling the caller to retry a game that no longer exists would loop forever.
+            throw new GameNotFoundException(gameId);
+        }
+        throw new ConcurrentGameUpdateException(gameId, game.version());
     }
 }

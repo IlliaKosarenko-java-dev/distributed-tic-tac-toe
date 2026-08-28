@@ -27,7 +27,7 @@ public class EngineStateMapper {
         return new EngineGameState(
                 toGameId(response.gameId()),
                 toBoard(response.board()),
-                toMark(response.nextPlayer(), "nextPlayer"),
+                toMarkOrNull(response.nextPlayer()),
                 toOutcome(response.status()),
                 response.moveCount(),
                 response.version(),

@@ -14,6 +14,7 @@ import java.util.List;
  * everything past this point deals in {@link Mark} and {@link GameOutcome}, so a change to the
  * engine's JSON is absorbed in one mapper rather than everywhere a response is read.
  *
+ * @param nextPlayer whose turn it is, or null once the game has finished
  * @param version echo back on the next move to detect a game that moved on underneath us
  */
 public record EngineGameState(

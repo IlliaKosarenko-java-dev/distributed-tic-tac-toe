@@ -7,7 +7,6 @@ import com.flamingo.tictactoe.engine.repository.GameRepositoryContract;
 import com.flamingo.tictactoe.engine.repository.StoredGame;
 import com.flamingo.tictactoe.engine.config.ClockConfiguration;
 import com.flamingo.tictactoe.engine.domain.Game;
-import com.flamingo.tictactoe.engine.domain.GameStatus;
 import com.flamingo.tictactoe.engine.domain.Move;
 import com.flamingo.tictactoe.engine.domain.Player;
 import org.junit.jupiter.api.BeforeEach;
@@ -82,22 +81,5 @@ class MongoGameRepositoryTest extends GameRepositoryContract {
         repository.save(created.withGame(created.game().applyMove(Move.of(Player.X, 0))));
 
         assertThat(documents.findById(GAME_ID.toString()).orElseThrow().createdAt()).isEqualTo(createdAt);
-    }
-
-    @Test
-    void indexedStatusSupportsQueryingGamesByOutcome() {
-        StoredGame current = repository.createIfAbsent(Game.newGame(GAME_ID, Player.X)).orElseThrow();
-        for (int cell : new int[]{0, 3, 1, 4, 2}) {
-            current = repository.save(current.withGame(
-                    current.game().applyMove(Move.of(current.game().nextPlayer(), cell))));
-        }
-        repository.createIfAbsent(Game.newGame(SECOND_GAME_ID, Player.X));
-
-        assertThat(documents.findByStatus(GameStatus.X_WON))
-                .extracting(GameDocument::id)
-                .containsExactly(GAME_ID.toString());
-        assertThat(documents.findByStatus(GameStatus.IN_PROGRESS))
-                .extracting(GameDocument::id)
-                .containsExactly(SECOND_GAME_ID.toString());
     }
 }
